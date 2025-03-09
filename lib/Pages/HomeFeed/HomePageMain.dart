@@ -26,7 +26,7 @@ class _HomePageMainState extends State<HomePageMain> {
 
   @override
   Widget build(BuildContext context) {
-    final themeProvider = Provider.of<ThemeProvider>(context);
+
     return Scaffold(
       endDrawer: const RightDrawer(),
       drawer: const LeftDrawer(),
@@ -60,7 +60,7 @@ class _HomePageMainState extends State<HomePageMain> {
               icon: Icon(CupertinoIcons.plus), label: "Post"),
           BottomNavigationBarItem(icon: Icon(Icons.all_inbox), label: "Inbox"),
           BottomNavigationBarItem(
-              icon: Icon(Icons.account_circle), label: "Profile"),
+              icon: Icon(Bootstrap.chat), label: "Chat"),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
