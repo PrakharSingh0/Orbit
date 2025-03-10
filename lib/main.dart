@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:orbit/HomeScren.dart';
 import 'package:orbit/Pages/HomeFeed/HomePageMain.dart';
 import 'package:provider/provider.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'ThemeData/theme_provider.dart';
 
 void main() async {

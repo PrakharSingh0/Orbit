@@ -3,9 +3,6 @@ import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/MiscellaneousPage/LeftDrawer.dart';
 import 'package:orbit/Pages/MiscellaneousPage/RightDrawer.dart';
-import 'package:provider/provider.dart';
-
-import '../../ThemeData/theme_provider.dart';
 
 class HomePageMain extends StatefulWidget {
   const HomePageMain({super.key});
