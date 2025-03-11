@@ -1,6 +1,11 @@
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
+import 'package:orbit/Pages/HomeFeed/AddPostPage.dart';
+import 'package:orbit/Pages/HomeFeed/Chat.dart';
+import 'package:orbit/Pages/HomeFeed/ExplorePage.dart';
+import 'package:orbit/Pages/HomeFeed/FeedPage.dart';
+import 'package:orbit/Pages/HomeFeed/InboxPage.dart';
 import 'package:orbit/Pages/MiscellaneousPage/LeftDrawer.dart';
 import 'package:orbit/Pages/MiscellaneousPage/RightDrawer.dart';
 
@@ -13,7 +18,15 @@ class HomePageMain extends StatefulWidget {
 
 class _HomePageMainState extends State<HomePageMain> {
   int _selectedIndex = 0;
-  final pages = [];
+
+  // Explicitly defining the list type as List<Widget>
+  final List<Widget> pages = [
+    const FeedPage(),
+    const ExplorePage(),
+    const AddPostPage(),
+    const InboxPage(),
+    const Chat()
+  ];
 
   void _onItemTapped(int index) {
     setState(() {
@@ -23,7 +36,6 @@ class _HomePageMainState extends State<HomePageMain> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
       endDrawer: const RightDrawer(),
       drawer: const LeftDrawer(),
@@ -38,7 +50,9 @@ class _HomePageMainState extends State<HomePageMain> {
               onTap: () {
                 Scaffold.of(context).openEndDrawer();
               },
-              child: const CircleAvatar(),
+              child: const CircleAvatar(
+                backgroundImage: AssetImage("assets/avatar.jpg"),
+              ),
             ),
           ),
           const SizedBox.square(
@@ -46,6 +60,7 @@ class _HomePageMainState extends State<HomePageMain> {
           )
         ],
       ),
+      body: pages[_selectedIndex], // No change needed here
       bottomNavigationBar: BottomNavigationBar(
         elevation: 5,
         selectedFontSize: 10,
@@ -57,7 +72,7 @@ class _HomePageMainState extends State<HomePageMain> {
               icon: Icon(CupertinoIcons.plus), label: "Post"),
           BottomNavigationBarItem(icon: Icon(Icons.all_inbox), label: "Inbox"),
           BottomNavigationBarItem(
-              icon: Icon(Bootstrap.chat), label: "Chat"),
+              icon: Icon(LineAwesome.user_astronaut_solid), label: "Profile"),
         ],
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

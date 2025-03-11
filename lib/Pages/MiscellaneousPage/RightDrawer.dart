@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
+import 'package:orbit/Pages/HomeFeed/ProfilePage.dart';
+
+import 'Settings.dart';
 
 class RightDrawer extends StatefulWidget {
   const RightDrawer({super.key});
@@ -25,31 +28,34 @@ class _RightDrawerState extends State<RightDrawer> {
         child: Column(
           children: [
             Expanded(
-              child: Center( // Center everything except bottom items
+              child: Center(
+                // Center everything except bottom items
                 child: SingleChildScrollView(
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       // User Profile Section
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 15),
+                      const Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: 10, vertical: 15),
                         child: Row(
                           children: [
-                            const CircleAvatar(radius: 25),
-                            const SizedBox(width: 8),
+                            CircleAvatar(radius: 25,backgroundImage: AssetImage("assets/avatar.jpg"),),
+                            SizedBox(width: 8),
                             Expanded(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     "UserName",
-                                    style: const TextStyle(fontSize: 18),
+                                    style: TextStyle(fontSize: 18),
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                   ),
                                   Text(
                                     "@UserID",
-                                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                                    style: TextStyle(
+                                        color: Colors.grey, fontSize: 12),
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                   ),
@@ -73,7 +79,10 @@ class _RightDrawerState extends State<RightDrawer> {
                             ),
                             onPressed: _onStatusChanged,
                             child: Text(
-                              _isOnline ? " Online Status: On " : " Online Status: Off ",
+                              _isOnline
+                                  ? " Online Status: On "
+                                  : " Online Status: Off ",
+                              overflow: TextOverflow.ellipsis,
                               style: TextStyle(
                                 color: _isOnline ? Colors.green : Colors.red,
                               ),
@@ -92,19 +101,20 @@ class _RightDrawerState extends State<RightDrawer> {
                             padding: const EdgeInsets.symmetric(horizontal: 10),
                             child: isWideScreen
                                 ? Row(
-                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                              children: [
-                                _buildStatCard("Follower", "0"),
-                                _buildStatCard("Following", "0"),
-                              ],
-                            )
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceEvenly,
+                                    children: [
+                                      _buildStatCard("Follower", "0"),
+                                      _buildStatCard("Following", "0"),
+                                    ],
+                                  )
                                 : Column(
-                              children: [
-                                _buildStatCard("Follower", "0"),
-                                const SizedBox(height: 8),
-                                _buildStatCard("Following", "0"),
-                              ],
-                            ),
+                                    children: [
+                                      _buildStatCard("Follower", "0"),
+                                      const SizedBox(height: 8),
+                                      _buildStatCard("Following", "0"),
+                                    ],
+                                  ),
                           );
                         },
                       ),
@@ -118,23 +128,23 @@ class _RightDrawerState extends State<RightDrawer> {
                           children: [
                             ListTile(
                               leading: const Icon(FontAwesome.user),
-                              title: const Text(" Profile "),
-                              onTap: () {},
+                              title: const Text(" Profile ",overflow: TextOverflow.ellipsis,),
+                              onTap: (){Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));}
                             ),
                             ListTile(
                               leading: const Icon(FontAwesome.bookmark),
-                              title: const Text(" Saved "),
-                              onTap: () {},
+                              title: const Text(" Saved ",overflow: TextOverflow.ellipsis,),
+                              onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));},
                             ),
                             ListTile(
                               leading: const Icon(OctIcons.history),
-                              title: const Text(" History "),
-                              onTap: () {},
+                              title: const Text(" History ",overflow: TextOverflow.ellipsis,),
+                              onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));},
                             ),
                             ListTile(
                               leading: const Icon(Icons.workspace_premium),
-                              title: const Text(" Premium "),
-                              onTap: () {},
+                              title: const Text(" Premium ",overflow: TextOverflow.ellipsis,),
+                              onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));},
                             ),
                           ],
                         ),
@@ -151,14 +161,14 @@ class _RightDrawerState extends State<RightDrawer> {
             Column(
               children: [
                 ListTile(
-                  leading: const Icon(Iconsax.profile_2user_outline),
-                  title: const Text(" Switch User "),
+                  leading: const Icon(AntDesign.user_switch_outline),
+                  title: const Text(" Switch User ",overflow: TextOverflow.ellipsis,),
                   onTap: () {},
                 ),
                 ListTile(
                   leading: const Icon(Icons.settings_outlined),
-                  title: const Text(" Settings "),
-                  onTap: () {},
+                  title: const Text(" Settings ",overflow: TextOverflow.ellipsis,),
+                  onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Settings()));},
                 ),
               ],
             ),
@@ -178,8 +188,11 @@ class _RightDrawerState extends State<RightDrawer> {
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
-            Text(value, style: const TextStyle(fontSize: 10, color: Colors.grey)),
+            Text(title,
+                style:
+                    const TextStyle(fontSize: 12, fontWeight: FontWeight.bold,overflow: TextOverflow.ellipsis,)),
+            Text(value,
+                style: const TextStyle(fontSize: 10, color: Colors.grey,overflow: TextOverflow.ellipsis,)),
           ],
         ),
       ],
