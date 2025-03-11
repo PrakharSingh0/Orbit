@@ -14,6 +14,43 @@ class RightDrawer extends StatefulWidget {
 class _RightDrawerState extends State<RightDrawer> {
   bool _isOnline = true; // Track online status
 
+  void _navigateWithSlide(BuildContext context, Widget page) {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (context, animation, secondaryAnimation) => page,
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Slide Animation
+          final slideAnimation = Tween<Offset>(
+            begin: const Offset(1.0, 0.0), // Slide from bottom
+            end: Offset.zero,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutQuad, // ✅ Smooth easing effect
+          ));
+
+          // Fade Animation
+          final fadeAnimation = Tween<double>(
+            begin: 0.0, // Fully transparent
+            end: 1.0,   // Fully visible
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeIn, // ✅ Smooth fade-in effect
+          ));
+
+          return FadeTransition(
+            opacity: fadeAnimation,
+            child: SlideTransition(
+              position: slideAnimation,
+              child: child,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+
   void _onStatusChanged() {
     setState(() {
       _isOnline = !_isOnline; // Toggle online status
@@ -129,7 +166,7 @@ class _RightDrawerState extends State<RightDrawer> {
                             ListTile(
                               leading: const Icon(FontAwesome.user),
                               title: const Text(" Profile ",overflow: TextOverflow.ellipsis,),
-                              onTap: (){Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));}
+                              onTap: (){_navigateWithSlide(context, const Profile());}
                             ),
                             ListTile(
                               leading: const Icon(FontAwesome.bookmark),

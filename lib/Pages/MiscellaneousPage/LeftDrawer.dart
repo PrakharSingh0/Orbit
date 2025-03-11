@@ -1,121 +1,104 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:provider/provider.dart';
-
+import 'package:intl/intl.dart';
 import '../../ThemeData/theme_provider.dart';
 
-class LeftDrawer extends StatefulWidget {
+class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
-
-  @override
-  State<LeftDrawer> createState() => _LeftDrawerState();
-}
-
-class _LeftDrawerState extends State<LeftDrawer> {
-  bool _showAllFollowers = false; // Track expanded state
-
-  final List<String> _followers = List.generate(15, (index) => "Follower ${index + 1}"); // Dummy follower list
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+
+    String formattedDate = DateFormat('EEEE, MMM d').format(DateTime.now());
+    String formattedTime = DateFormat('hh:mm a').format(DateTime.now());
 
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.6,
       child: Drawer(
         child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            SizedBox(height: 50,),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
-                child: Column(
+            const SizedBox(height: 50),
+
+            Padding(
+              padding: EdgeInsets.only(left: 10,right: 10),
+              child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 10),
-                    // Favorite Followers Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Favorite Followers",
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
-                      ),
+                    Text(
+                      formattedDate,
+                      style: theme.textTheme.titleLarge
+                          ?.copyWith(fontWeight: FontWeight.bold),
+                    ),Text(
+                      formattedTime,
+                      style: theme.textTheme.titleMedium
+                          ?.copyWith(fontWeight: FontWeight.bold),
                     ),
-
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(), // Prevents nested scrolling issues
-                      itemCount: _showAllFollowers ? _followers.length : (_followers.length > 4 ? 4 : _followers.length),
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          leading: const CircleAvatar(radius: 18), // Placeholder avatar
-                          title: Text(_followers[index]),
-                          onTap: () {
-                            // Handle follower tap
-                          },
-                        );
-                      },
-                    ),
-
-                    if (_followers.length > 5)
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _showAllFollowers = !_showAllFollowers;
-                          });
-                        },
-                        child: Text(_showAllFollowers ? "Show Less" : "Show More"),
-                      ),
-
-                  ],
-                ),
-              ),
+                    Divider(),
+                    Text(
+                      "App Version 1.0.0",
+                      style: theme.textTheme.bodySmall?.copyWith(color: Colors.grey),),
+                  ]),
             ),
+            // Divider(),
 
-            // Dark Mode & Logout at the bottom
+            Spacer(),
+
+            const Divider(),
+
+            // Dark Mode & Logout
             Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Divider(),
-
                 SwitchListTile(
-                  title: const Text(
+                  title: Text(
                     "Dark Mode",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                   contentPadding: const EdgeInsets.symmetric(horizontal: 16),
                   secondary: AnimatedSwitcher(
                     duration: const Duration(milliseconds: 400),
-                    transitionBuilder: (Widget child, Animation<double> animation) {
+                    transitionBuilder:
+                        (Widget child, Animation<double> animation) {
                       return FadeTransition(
                         opacity: animation,
                         child: RotationTransition(
-                          turns: animation,
+                          turns: Tween(begin: 0.5, end: 1.0).animate(animation),
                           child: child,
                         ),
                       );
                     },
                     child: Icon(
-                      themeProvider.themeMode == ThemeMode.dark ? Icons.bedtime : Icons.wb_sunny_rounded,
-                      key: ValueKey<bool>(themeProvider.themeMode == ThemeMode.dark),
-                      color: Colors.grey.shade600,
-                      size: 22,
+                      themeProvider.themeMode == ThemeMode.dark
+                          ? Icons.bedtime
+                          : Icons.wb_sunny_rounded,
+                      key: ValueKey<bool>(
+                          themeProvider.themeMode == ThemeMode.dark),
+                      color: theme.colorScheme.secondary,
+                      size: 24,
                     ),
                   ),
                   value: themeProvider.themeMode == ThemeMode.dark,
                   onChanged: (value) {
                     themeProvider.toggleTheme();
                   },
-                  activeColor: Colors.grey.shade800,
-                  inactiveThumbColor: Colors.grey.shade400,
-                  inactiveTrackColor: Colors.grey.shade300,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
                 ),
-
                 ListTile(
-                  leading: const Icon(AntDesign.logout_outline),
-                  title: const Text("Log Out"),
+                  leading: Icon(
+                    AntDesign.logout_outline,
+                    color: theme.colorScheme.error,
+                  ),
+                  title: Text(
+                    "Log Out",
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: theme.colorScheme.error,
+                    ),
+                  ),
                   onTap: () {
                     // Handle log out
                   },
