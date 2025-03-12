@@ -63,7 +63,7 @@ class _ProfileState extends State<Profile> {
                   child: Container(
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.only(bottomRight: Radius.circular(25)),
-                      color: Colors.black.withOpacity(0.3),
+                      color: Colors.black.withAlpha((0.3 * 255).toInt())
                     ),
                   ),
                 ),
@@ -77,7 +77,7 @@ class _ProfileState extends State<Profile> {
                       shape: BoxShape.circle,
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.2),
+                          color: Colors.black.withAlpha((0.3 * 255).toInt()),
                           blurRadius: 10,
                           offset: const Offset(0, 4),
                         ),

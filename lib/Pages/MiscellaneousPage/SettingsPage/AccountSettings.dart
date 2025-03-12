@@ -22,7 +22,7 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Account Settings"),
+        title: const Text("Account Settings",style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
         backgroundColor: isDarkMode ? Colors.black : Colors.white,
         elevation: 0,
       ),
@@ -255,6 +255,6 @@ class _AccountSettingsPageState extends State<AccountSettingsPage> {
   }
 
   Widget _buildDivider() {
-    return Divider(color: Colors.grey.withOpacity(0.3), thickness: 0.8, height: 20);
+    return Divider(color: Colors.grey.withAlpha((0.3 * 255).toInt()), thickness: 0.8, height: 20);
   }
 }

@@ -28,7 +28,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Notification Settings"),
+        title: const Text("Notification Settings",style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
         backgroundColor: isDarkMode ? Colors.black : Colors.white,
         elevation: 0,
       ),
@@ -46,7 +46,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
             isDarkMode, // ✅ isDarkMode (bool)
           ),
 
-
+          _buildDivider(),
 
           _buildSectionTitle("Messages", isDarkMode),
           _buildSwitchTile("Direct Message", Icons.mail_outline, directMessage, (value) {
@@ -55,6 +55,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           _buildSwitchTile("Chat Message", Icons.chat_bubble_outline, chatMessage, (value) {
             setState(() => chatMessage = value);
           }, isDarkMode, disabled: !allowNotifications),
+
+          _buildDivider(),
 
           _buildSectionTitle("Activity", isDarkMode),
           _buildSwitchTile("@Mention", Icons.alternate_email, mention, (value) {
@@ -78,6 +80,8 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
           _buildSwitchTile("New Post from Following", Icons.post_add_outlined, newPostFromFollowing, (value) {
             setState(() => newPostFromFollowing = value);
           }, isDarkMode, disabled: !allowNotifications),
+
+          _buildDivider(),
 
           _buildSectionTitle("Other", isDarkMode),
           _buildSwitchTile("Announcements", Icons.campaign_outlined, announcements, (value) {
@@ -178,7 +182,7 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
                             : Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black..withAlpha((0.1 * 255).toInt()),
                             blurRadius: 2,
                             spreadRadius: 1,
                             offset: const Offset(0, 1),
@@ -194,6 +198,9 @@ class _NotificationSettingsPageState extends State<NotificationSettingsPage> {
         ],
       ),
     );
+  }
+  Widget _buildDivider() {
+    return Divider(color: Colors.grey.withAlpha((0.3 * 255).toInt()), thickness: 0.8, height: 20);
   }
 
 }

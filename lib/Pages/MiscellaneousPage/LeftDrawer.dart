@@ -25,8 +25,9 @@ class LeftDrawer extends StatelessWidget {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.6,
       child: Drawer(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         child: Container(
-          color: theme.colorScheme.background, // ✅ Adaptive background color
+          color: theme.colorScheme.surface, // ✅ Adaptive background color
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -41,21 +42,22 @@ class LeftDrawer extends StatelessWidget {
                       formattedDate,
                       style: theme.textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onBackground, // ✅ Adaptive text color
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
                       ),
                     ),
                     Text(
                       formattedTime,
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: theme.colorScheme.onBackground, // ✅ Adaptive text color
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
                       ),
                     ),
-                    Divider(color: theme.colorScheme.onSurface.withOpacity(0.3)), // ✅ Softer divider
+                    Divider(color: theme.colorScheme.onSurface.withAlpha((0.3 * 255).toInt())),
+                    // ✅ Softer divider
                     Text(
                       "App Version 1.0.0",
                       style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurface.withOpacity(0.6), // ✅ Adaptive text
+                        color: theme.colorScheme.onSurface.withAlpha((0.6 * 255).toInt()), // ✅ Adaptive text
                       ),
                     ),
                   ],
@@ -64,7 +66,7 @@ class LeftDrawer extends StatelessWidget {
 
               const Spacer(),
 
-              Divider(color: theme.colorScheme.onSurface.withOpacity(0.3)),
+              Divider(color: theme.colorScheme.onSurface.withAlpha((0.3 * 255).toInt())),
 
               // Dark Mode Toggle
               Column(
@@ -75,7 +77,7 @@ class LeftDrawer extends StatelessWidget {
                       "Dark Mode",
                       style: theme.textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w500,
-                        color: theme.colorScheme.onBackground, // ✅ Adaptive text color
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
                       ),
                     ),
                     contentPadding: const EdgeInsets.symmetric(horizontal: 16),
@@ -106,12 +108,12 @@ class LeftDrawer extends StatelessWidget {
                   ListTile(
                     leading: Icon(
                       AntDesign.logout_outline,
-                      color: theme.colorScheme.error, // ✅ Error color adapts to theme
+                      color: theme.colorScheme.onSurface, // ✅ Error color adapts to theme
                     ),
                     title: Text(
                       "Log Out",
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.error, // ✅ Error color adapts to theme
+                        color: theme.colorScheme.onSurface, // ✅ Error color adapts to theme
                       ),
                     ),
                     onTap: () {

@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/HomeFeed/AddPostPage.dart';
-import 'package:orbit/Pages/HomeFeed/Chat.dart';
+
 import 'package:orbit/Pages/HomeFeed/ExplorePage.dart';
 import 'package:orbit/Pages/HomeFeed/FeedPage.dart';
 import 'package:orbit/Pages/HomeFeed/InboxPage.dart';
@@ -39,35 +39,47 @@ class _HomePageMainState extends State<HomePageMain> {
   ];
 
 
-  void _navigateWithSlide(BuildContext context, Widget page) {
+  void _navigateWithCoolAnimation(BuildContext context, Widget page) {
     Navigator.of(context).push(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 400),
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Slide Animation
+          // Slide from bottom
           final slideAnimation = Tween<Offset>(
-            begin: const Offset(0.0, 1.0), // Slide from bottom
+            begin: const Offset(0.0, 0.2), // Start slightly below
             end: Offset.zero,
           ).animate(CurvedAnimation(
             parent: animation,
-            curve: Curves.easeOutQuad, // ✅ Smooth easing effect
+            curve: Curves.easeOutCubic, // ✅ Smooth & natural transition
           ));
 
-          // Fade Animation
-          final fadeAnimation = Tween<double>(
-            begin: 0.0, // Fully transparent
-            end: 1.0,   // Fully visible
+          // Scale (zoom) effect
+          final scaleAnimation = Tween<double>(
+            begin: 0.95, // Slightly smaller
+            end: 1.0,    // Full size
           ).animate(CurvedAnimation(
             parent: animation,
-            curve: Curves.easeIn, // ✅ Smooth fade-in effect
+            curve: Curves.easeOutBack, // ✅ Adds a nice "pop" effect
+          ));
+
+          // Fade animation
+          final fadeAnimation = Tween<double>(
+            begin: 0.0,
+            end: 1.0,
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeInOut, // ✅ Smooth fade-in
           ));
 
           return FadeTransition(
             opacity: fadeAnimation,
             child: SlideTransition(
               position: slideAnimation,
-              child: child,
+              child: ScaleTransition(
+                scale: scaleAnimation,
+                child: child,
+              ),
             ),
           );
         },
@@ -78,9 +90,10 @@ class _HomePageMainState extends State<HomePageMain> {
 
 
 
+
   void _onItemTapped(int index) {
     if (index == 4) { // Profile Button Clicked
-      _navigateWithSlide(context, const Profile()); // ✅ Open with animation
+      _navigateWithCoolAnimation(context, const Profile()); // ✅ Open with animation
     } else {
       setState(() {
         _selectedIndex = index;
@@ -94,9 +107,11 @@ class _HomePageMainState extends State<HomePageMain> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: Theme.of(context).colorScheme.surface,
       endDrawer: const RightDrawer(),
       drawer: const LeftDrawer(),
       appBar: AppBar(
+        backgroundColor: Theme.of(context).colorScheme.surface,
         title: Text(
           appBarTitles[_selectedIndex], // Dynamic Title
           style: GoogleFonts.poppins(

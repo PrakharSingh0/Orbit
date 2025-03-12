@@ -52,7 +52,7 @@ class FAQsPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("FAQs"),
+        title: const Text("FAQs",style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
         backgroundColor: isDarkMode ? Colors.black : Colors.white,
         elevation: 0,
       ),

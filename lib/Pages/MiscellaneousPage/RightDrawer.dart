@@ -14,34 +14,34 @@ class RightDrawer extends StatefulWidget {
 class _RightDrawerState extends State<RightDrawer> {
   bool _isOnline = true; // Track online status
 
-  void _navigateWithSlide(BuildContext context, Widget page) {
+  void _navigateFromDrawer(BuildContext context, Widget page) {
     Navigator.of(context).push(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Slide Animation
+          // Slide from left (Drawer-like effect)
           final slideAnimation = Tween<Offset>(
-            begin: const Offset(1.0, 0.0), // Slide from bottom
+            begin: const Offset(1.0, 0.0), // Start from left
             end: Offset.zero,
           ).animate(CurvedAnimation(
             parent: animation,
-            curve: Curves.easeOutQuad, // ✅ Smooth easing effect
+            curve: Curves.easeOutQuad, // ✅ Smooth & natural feel
           ));
 
-          // Fade Animation
-          final fadeAnimation = Tween<double>(
-            begin: 0.0, // Fully transparent
-            end: 1.0,   // Fully visible
+          // Scale effect (subtle zoom-in)
+          final scaleAnimation = Tween<double>(
+            begin: 0.9, // Slightly smaller
+            end: 1.0,   // Full size
           ).animate(CurvedAnimation(
             parent: animation,
-            curve: Curves.easeIn, // ✅ Smooth fade-in effect
+            curve: Curves.easeOutBack, // ✅ Adds a slight "pop" effect
           ));
 
-          return FadeTransition(
-            opacity: fadeAnimation,
-            child: SlideTransition(
-              position: slideAnimation,
+          return SlideTransition(
+            position: slideAnimation,
+            child: ScaleTransition(
+              scale: scaleAnimation,
               child: child,
             ),
           );
@@ -49,7 +49,6 @@ class _RightDrawerState extends State<RightDrawer> {
       ),
     );
   }
-
 
   void _onStatusChanged() {
     setState(() {
@@ -62,7 +61,7 @@ class _RightDrawerState extends State<RightDrawer> {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.6,
       child: Drawer(
-        backgroundColor: Theme.of(context).colorScheme.background,
+        backgroundColor: Theme.of(context).colorScheme.surface,
         child: Column(
           children: [
             Expanded(
@@ -86,14 +85,16 @@ class _RightDrawerState extends State<RightDrawer> {
                                 children: [
                                   Text(
                                     "UserName",
-                                    style: TextStyle(fontSize: 18),
+                                    style: TextStyle(fontSize: 18,fontWeight: FontWeight.w500,),
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                   ),
                                   Text(
                                     "@UserID",
                                     style: TextStyle(
-                                        color: Colors.grey, fontSize: 12),
+                                        color: Colors.grey, fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      ),
                                     overflow: TextOverflow.ellipsis,
                                     maxLines: 1,
                                   ),
@@ -112,17 +113,17 @@ class _RightDrawerState extends State<RightDrawer> {
                           child: OutlinedButton(
                             style: OutlinedButton.styleFrom(
                               side: BorderSide(
-                                color: _isOnline ? Colors.green : Colors.red,
+                                color: _isOnline ? Colors.green : Colors.grey,
                               ),
                             ),
                             onPressed: _onStatusChanged,
                             child: Text(
                               _isOnline
-                                  ? " Online Status: On "
-                                  : " Online Status: Off ",
+                                  ? " Online Status: ON "
+                                  : " Online Status: OFF ",
                               overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                color: _isOnline ? Colors.green : Colors.red,
+                              style: TextStyle(fontWeight: FontWeight.w600,fontSize: 14,
+                                color: _isOnline ? Colors.green : Colors.grey,
                               ),
                             ),
                           ),
@@ -166,23 +167,23 @@ class _RightDrawerState extends State<RightDrawer> {
                           children: [
                             ListTile(
                               leading: const Icon(FontAwesome.user),
-                              title: const Text(" Profile ",overflow: TextOverflow.ellipsis,),
-                              onTap: (){_navigateWithSlide(context, const Profile());}
+                              title: const Text(" Profile ",style:TextStyle(fontWeight: FontWeight.w600,fontSize: 16),overflow: TextOverflow.ellipsis,),
+                              onTap: (){_navigateFromDrawer(context, const Profile());}
                             ),
                             ListTile(
                               leading: const Icon(FontAwesome.bookmark),
-                              title: const Text(" Saved ",overflow: TextOverflow.ellipsis,),
-                              onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));},
+                              title: const Text(" Saved ",style:TextStyle(fontWeight: FontWeight.w600,fontSize: 16),overflow: TextOverflow.ellipsis,),
+                              onTap: () {_navigateFromDrawer(context, const Profile());},
                             ),
                             ListTile(
                               leading: const Icon(OctIcons.history),
-                              title: const Text(" History ",overflow: TextOverflow.ellipsis,),
-                              onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));},
+                              title: const Text(" History ",style:TextStyle(fontWeight: FontWeight.w600,fontSize: 16),overflow: TextOverflow.ellipsis,),
+                              onTap: () {_navigateFromDrawer(context, const Profile());},
                             ),
                             ListTile(
                               leading: const Icon(Icons.workspace_premium),
-                              title: const Text(" Premium ",overflow: TextOverflow.ellipsis,),
-                              onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Profile()));},
+                              title: const Text(" Premium ",style:TextStyle(fontWeight: FontWeight.w600,fontSize: 16),overflow: TextOverflow.ellipsis,),
+                              onTap: () {_navigateFromDrawer(context, const Profile());},
                             ),
                           ],
                         ),
@@ -200,13 +201,13 @@ class _RightDrawerState extends State<RightDrawer> {
               children: [
                 ListTile(
                   leading: const Icon(AntDesign.user_switch_outline),
-                  title: const Text(" Switch User ",overflow: TextOverflow.ellipsis,),
+                  title: const Text(" Switch User ",style:TextStyle(fontWeight: FontWeight.w600,fontSize: 16),overflow: TextOverflow.ellipsis,),
                   onTap: () {},
                 ),
                 ListTile(
                   leading: const Icon(Icons.settings_outlined),
-                  title: const Text(" Settings ",overflow: TextOverflow.ellipsis,),
-                  onTap: () {Navigator.push(context, MaterialPageRoute(builder: (context)=> const Settings()));},
+                  title: const Text(" Settings ",style:TextStyle(fontWeight: FontWeight.w600,fontSize: 16),overflow: TextOverflow.ellipsis,),
+                  onTap: () {_navigateFromDrawer(context, const Settings());},
                 ),
               ],
             ),

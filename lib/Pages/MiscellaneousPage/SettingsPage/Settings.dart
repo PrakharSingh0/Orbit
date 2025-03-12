@@ -58,22 +58,38 @@ class _SettingsState extends State<Settings> {
         transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Slide from right (default page transition)
           final slideAnimation = Tween<Offset>(
-            begin: const Offset(1.0, 0.0), // Slide from right
+            begin: const Offset(1.0, 0.0),
             end: Offset.zero,
           ).animate(CurvedAnimation(
             parent: animation,
-            curve: Curves.easeOutQuad, // Smooth easing
+            curve: Curves.easeOutQuad, // ✅ Smooth easing effect
+          ));
+
+          // Scale effect (slight pop)
+          final scaleAnimation = Tween<double>(
+            begin: 0.95, // Start slightly smaller
+            end: 1.0,    // Full size
+          ).animate(CurvedAnimation(
+            parent: animation,
+            curve: Curves.easeOutBack, // ✅ Natural transition feel
           ));
 
           return SlideTransition(
             position: slideAnimation,
-            child: child,
+            child: ScaleTransition(
+              scale: scaleAnimation,
+              child: child,
+            ),
           );
         },
       ),
     );
   }
+
+
+
 
 
   @override
@@ -356,7 +372,7 @@ class _SettingsState extends State<Settings> {
                             : Colors.white,
                         boxShadow: [
                           BoxShadow(
-                            color: Colors.black.withOpacity(0.1),
+                            color: Colors.black.withAlpha((0.1 * 255).toInt()),
                             blurRadius: 2,
                             spreadRadius: 1,
                             offset: const Offset(0, 1),
@@ -376,6 +392,6 @@ class _SettingsState extends State<Settings> {
 
 
   Widget _buildDivider() {
-    return Divider(color: Colors.grey.withOpacity(0.3), thickness: 0.8, height: 20);
+    return Divider(color: Colors.grey.withAlpha((0.3 * 255).toInt()), thickness: 0.8, height: 20);
   }
 }

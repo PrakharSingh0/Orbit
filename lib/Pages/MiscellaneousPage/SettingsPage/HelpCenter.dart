@@ -9,7 +9,7 @@ class HelpCenterPage extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Help Center"),
+        title: const Text("Help Center",style: TextStyle(fontSize: 22, fontWeight: FontWeight.w600)),
         backgroundColor: isDarkMode ? Colors.black : Colors.white,
         elevation: 0,
       ),
