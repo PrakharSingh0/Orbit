@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/HomeFeed/ProfilePage.dart';
 
-import 'Settings.dart';
+import 'SettingsPage/Settings.dart';
 
 class RightDrawer extends StatefulWidget {
   const RightDrawer({super.key});
@@ -62,6 +62,7 @@ class _RightDrawerState extends State<RightDrawer> {
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.6,
       child: Drawer(
+        backgroundColor: Theme.of(context).colorScheme.background,
         child: Column(
           children: [
             Expanded(
