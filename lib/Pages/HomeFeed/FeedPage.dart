@@ -21,22 +21,22 @@ class _FeedPageState extends State<FeedPage> {
         const Divider(
           thickness: 0.1,
         ),
-        const ThreadCard(),
-        const Divider(
-          thickness: 0.1,
-        ),
-        const ThreadCard(),
-        const Divider(
-          thickness: 0.1,
-        ),
-        const ThreadCard(),
-        const Divider(
-          thickness: 0.1,
-        ),
-        const ThreadCard(),
-        const Divider(
-          thickness: 0.1,
-        ),
+        // const ThreadCard(),
+        // const Divider(
+        //   thickness: 0.1,
+        // ),
+        // const ThreadCard(),
+        // const Divider(
+        //   thickness: 0.1,
+        // ),
+        // const ThreadCard(),
+        // const Divider(
+        //   thickness: 0.1,
+        // ),
+        // const ThreadCard(),
+        // const Divider(
+        //   thickness: 0.1,
+        // ),
       ],
     ));
   }

@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
+import 'package:orbit/Pages/Cards/FullScreenImage.dart';
+import 'package:photo_view/photo_view.dart'; // For full-screen image viewer
+import 'package:readmore/readmore.dart';
 
 import 'CommentPage.dart';
+import 'PostOption.dart'; // For expandable text
 
 class ThreadCard extends StatefulWidget {
   const ThreadCard({super.key});
@@ -11,11 +15,14 @@ class ThreadCard extends StatefulWidget {
 }
 
 class _ThreadCardState extends State<ThreadCard> {
+  String ImageUrl="";
   int upvoteCount = 20;
   int shareCount = 0;
   int commentCount = 0;
   bool isUpvoted = false;
   bool isDownvoted = false;
+  var imagePath="assets/a1.webp";
+  var postId=1;
 
   void _handleUpvote() {
     setState(() {
@@ -73,8 +80,6 @@ class _ThreadCardState extends State<ThreadCard> {
     );
   }
 
-
-
   void _handleShare() {
     setState(() {
       shareCount += 1;
@@ -89,75 +94,38 @@ class _ThreadCardState extends State<ThreadCard> {
     return count.toString();
   }
 
-  void _showPostOptions() {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-      ),
-      backgroundColor: Theme.of(context).colorScheme.surface, // Adaptive theme
-      builder: (context) {
-        final theme = Theme.of(context);
-        return Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const SizedBox(height: 8), // Space for handle
-            _dragHandle(), // Drag Handle at top
-            _buildOption(Bootstrap.bookmark, "Save", theme, () {}),
-            _buildOption(Bootstrap.person_x, "Block Account", theme, () {}),
-            _buildOption(Bootstrap.flag, "Report Post", theme, () {}),
-            _buildOption(Bootstrap.eye_slash, "Hide", theme, () {}),
-            _buildOption(Bootstrap.share, "Share", theme, () {}),
-            _buildOption(Bootstrap.repeat, "Repost", theme, () {}),
-            const SizedBox(height: 12), // Bottom spacing
-          ],
-        );
-      },
-    );
-  }
 
-  Widget _buildOption(IconData icon, String title, ThemeData theme, VoidCallback onTap) {
-    return InkWell(
-      onTap: () {
-        Navigator.pop(context);
-        onTap();
-      },
-      borderRadius: BorderRadius.circular(10),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14), // Balanced padding
-        child: Row(
-          children: [
-            Icon(icon, size: 22, color: theme.colorScheme.onSurface.withOpacity(0.8)), // Bigger icon
-            const SizedBox(width: 14),
-            Expanded(
-              child: Text(
-                title,
-                style: TextStyle(
-                  fontSize: 16, // Increased text size
-                  fontWeight: FontWeight.w500,
-                  color: theme.colorScheme.onSurface.withOpacity(0.9),
-                ),
-              ),
-            ),
-          ],
+  // Open Full-Screen Image Viewer
+  void _openFullScreenImage(BuildContext context) {
+    Navigator.push(
+      context,
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 400),
+        reverseTransitionDuration: const Duration(milliseconds: 350),
+        pageBuilder: (context, animation, secondaryAnimation) => FullScreenImagePage(
+          imagePath: imagePath,
+          heroTag: "image_$postId",
         ),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          // Scale + Fade Animation
+          var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
+          var scaleTween = Tween<double>(begin: 0.9, end: 1.0);
+
+          return FadeTransition(
+            opacity: fadeTween.animate(
+              CurvedAnimation(parent: animation, curve: Curves.easeOut),
+            ),
+            child: ScaleTransition(
+              scale: scaleTween.animate(
+                CurvedAnimation(parent: animation, curve: Curves.easeOutBack),
+              ),
+              child: child,
+            ),
+          );
+        },
       ),
     );
   }
-
-// Drag Handle for Modal
-  Widget _dragHandle() {
-    return Container(
-      width: 90,
-      height: 5,
-      decoration: BoxDecoration(
-        color: Colors.grey.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(12),
-      ),
-      margin: const EdgeInsets.only(bottom: 12),
-    );
-  }
-
 
 
 
@@ -167,7 +135,6 @@ class _ThreadCardState extends State<ThreadCard> {
 
     return Card(
       elevation: 0,
-      // shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       color: theme.colorScheme.surface,
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
@@ -219,7 +186,7 @@ class _ThreadCardState extends State<ThreadCard> {
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: _showPostOptions,
+                  onPressed: ()=>PostOptions.show(context),
                   icon: Icon(
                     Bootstrap.three_dots,
                     size: 18,
@@ -244,9 +211,24 @@ class _ThreadCardState extends State<ThreadCard> {
             const SizedBox(height: 8),
 
             // Image (if any)
-            ClipRRect(
-              borderRadius: BorderRadius.circular(12),
-              child: Image.asset("assets/back.webp"),
+            GestureDetector(
+              onTap: () => _openFullScreenImage(context), // Open full-screen image on tap
+              child: Hero(
+                tag: "threadImage", // Unique tag for Hero animation
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(12),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      maxHeight: 300,
+                      minWidth: double.infinity, // Maximum height of 300
+                    ),
+                    child: Image.asset(
+                      "assets/a1.webp",
+                      fit: BoxFit.cover, // Ensures the image covers the available space
+                    ),
+                  ),
+                ),
+              ),
             ),
 
             const SizedBox(height: 8),
@@ -420,7 +402,6 @@ class _ThreadCardState extends State<ThreadCard> {
                 ),
               ],
             ),
-
           ],
         ),
       ),
