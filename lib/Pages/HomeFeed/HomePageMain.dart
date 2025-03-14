@@ -129,15 +129,33 @@ class _HomePageMainState extends State<HomePageMain> {
           IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.search)),
           IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.heart_fill)),
           Builder(
-            builder: (context) => InkWell(
-              onTap: () {
-                Scaffold.of(context).openEndDrawer();
-              },
-              child: const CircleAvatar(
-                backgroundImage: AssetImage("assets/avatar.jpg"),
-              ),
-            ),
+            builder: (context) {
+              return GestureDetector(
+                onTap: () {
+                  Scaffold.of(context).openEndDrawer();
+                },
+                child: Container(
+                  padding: const EdgeInsets.all(.5), // Outer padding for better spacing
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: theme.colorScheme.onSurface,
+                    // gradient: LinearGradient( // Instagram-like subtle gradient
+                    //   colors: [Colors.purpleAccent, Colors.orangeAccent],
+                    //   begin: Alignment.topLeft,
+                    //   end: Alignment.bottomRight,
+                    // ),
+                    border: Border.all(color: theme.colorScheme.onSurface, width: 1), // White border for contrast
+                  ),
+                  child: CircleAvatar(
+                    radius: 18, // Adjusted for better balance
+                    backgroundColor: Colors.grey[300], // Placeholder color
+                    backgroundImage: const AssetImage("assets/avatar.jpg"),
+                  ),
+                ),
+              );
+            },
           ),
+
           const SizedBox(width: 10),
         ],
       ),
