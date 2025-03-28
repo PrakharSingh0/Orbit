@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../Auth/Pages/welcomePage.dart';
 import '../../ThemeData/theme_provider.dart';
 
 class LeftDrawer extends StatelessWidget {
@@ -113,12 +115,10 @@ class LeftDrawer extends StatelessWidget {
                     title: Text(
                       "Log Out",
                       style: theme.textTheme.titleMedium?.copyWith(
-                        color: theme.colorScheme.onSurface, // ✅ Error color adapts to theme
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
                       ),
                     ),
-                    onTap: () {
-                      // Handle log out
-                    },
+                    onTap: () => _logout(context),
                   ),
                 ],
               ),
@@ -127,5 +127,21 @@ class LeftDrawer extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  void _logout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      // Navigate to the Welcome Screen and remove all previous routes
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) =>  WelcomeScreen()),
+            (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error logging out: ${e.toString()}")),
+      );
+    }
   }
 }

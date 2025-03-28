@@ -11,14 +11,14 @@ import 'Application Info.dart';
 import 'notification.dart';
 
 
-class Settings extends StatefulWidget {
-  const Settings({super.key});
+class SettingPage extends StatefulWidget {
+  const SettingPage({super.key});
 
   @override
-  State<Settings> createState() => _SettingsState();
+  State<SettingPage> createState() => _SettingPageState();
 }
 
-class _SettingsState extends State<Settings> {
+class _SettingPageState extends State<SettingPage> {
   String _selectedTextSize = 'Medium';
   String _selectedMediaQuality = 'Standard';
 

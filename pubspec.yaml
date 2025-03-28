@@ -43,6 +43,17 @@ dependencies:
   url_launcher: ^6.3.1
   photo_view: ^0.14.0
   readmore: ^3.0.0
+  firebase_core: ^3.12.1
+  firebase_auth: ^5.5.1
+  cloud_firestore: ^5.6.5
+  google_sign_in: ^6.3.0
+  fluttertoast: ^8.2.12
+  dio: ^5.8.0+1
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.4.0
+  image_cropper: ^9.0.0
+  lottie: ^3.3.1
+  flutter_animate: ^4.5.2
 
 dev_dependencies:
   flutter_test:
@@ -69,6 +80,9 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - assets/
+    - assets/animations/loading.json
+    - assets/animations/success.json
+    - assets/animations/sendMail.json
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
