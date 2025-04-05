@@ -19,10 +19,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
-  String? _emailError;
-  String? _passwordError;
   bool _isLoading = false;
-
 
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
@@ -41,7 +38,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
         await user.sendEmailVerification();
         _showEmailVerificationDialog(user);
 
-        // Schedule deletion after 2 minutes if not verified
+        // Schedule auto-delete
         Future.delayed(const Duration(minutes: 10), () async {
           await user.reload();
           if (!user.emailVerified) {
@@ -58,9 +55,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     }
   }
 
-
-
-
   void _showEmailVerificationDialog(User user) {
     bool isVerified = false;
     bool isResendDisabled = true;
@@ -72,36 +66,20 @@ class _SignUpScreenState extends State<SignUpScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            Future<void> _checkEmailVerification() async {
-              for (int i = 120; i > 0; i--) {
+            Future<void> _checkVerificationLoop() async {
+              for (int i = 0; i < 120; i++) {
                 await Future.delayed(const Duration(seconds: 5));
                 await user.reload();
                 user = FirebaseAuth.instance.currentUser!;
-                isVerified = user.emailVerified;
-
-                if (isVerified) {
-                  // Save user data after verification
-                  await FirebaseFirestore.instance.collection('users').doc(user.uid).set({
-                    'email': user.email,
-                    'createdAt': FieldValue.serverTimestamp(),
-                    'profileCompleted': false,
-                  });
-
-                  if (mounted) {
-                    Navigator.pop(context);
-                    Navigator.pushReplacement(
-                      context,
-                      MaterialPageRoute(builder: (context) => const ProfileSetupScreen()),
-                    );
-                  }
-                  return;
+                if (user.emailVerified) {
+                  isVerified = true;
+                  break;
                 }
-                setState(() {});
               }
 
               if (!isVerified) {
                 await user.delete();
-                if (mounted) {
+                if (context.mounted) {
                   Navigator.pop(context);
                   ScaffoldMessenger.of(context).showSnackBar(
                     const SnackBar(
@@ -111,6 +89,8 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   );
                 }
               }
+
+              setState(() {});
             }
 
             void _resendVerificationEmail() async {
@@ -121,29 +101,24 @@ class _SignUpScreenState extends State<SignUpScreen> {
                   resendCooldown = 30;
                 });
 
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Verification email resent!"),
-                    backgroundColor: Colors.green,
-                  ),
-                );
-
-                for (int i = 30; i > 0; i--) {
+                for (int i = 0; i < 30; i++) {
                   await Future.delayed(const Duration(seconds: 1));
                   setState(() => resendCooldown--);
                 }
+
                 setState(() => isResendDisabled = false);
+
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Verification email resent!")),
+                );
               } catch (e) {
                 ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Error: ${e.toString()}'),
-                    backgroundColor: Colors.red,
-                  ),
+                  SnackBar(content: Text('Error: ${e.toString()}')),
                 );
               }
             }
 
-            _checkEmailVerification();
+            _checkVerificationLoop();
 
             return WillPopScope(
               onWillPop: () async {
@@ -156,82 +131,81 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 );
                 return true;
               },
-              child: Dialog(
+              child: AlertDialog(
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
                 backgroundColor: Theme.of(context).brightness == Brightness.dark
                     ? Colors.grey[900]
                     : Colors.white,
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Lottie.asset(
-                        'assets/animations/loading.json',
-                        width: 100,
-                        height: 100,
+                content: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Lottie.asset('assets/animations/loading.json', width: 100, height: 100),
+                    const SizedBox(height: 10),
+                    Text(
+                      "Verify Your Email",
+                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
                       ),
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      "A verification link has been sent to:\n${user.email}",
+                      textAlign: TextAlign.center,
+                    ),
+                    const SizedBox(height: 20),
+                    if (!isVerified) ...[
+                      const CircularProgressIndicator(),
                       const SizedBox(height: 10),
                       Text(
-                        "Verify Your Email",
-                        style: TextStyle(
-                          fontSize: 20,
-                          fontWeight: FontWeight.bold,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white
-                              : Colors.black,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 10),
-                      Text(
-                        "A verification email has been sent to:\n${user.email}\nPlease check your inbox.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 15,
-                          color: Theme.of(context).brightness == Brightness.dark
-                              ? Colors.white70
-                              : Colors.black87,
-                        ),
+                        "Waiting for verification...",
+                        style: TextStyle(color: Colors.grey[600]),
                       ),
                       const SizedBox(height: 15),
-                      if (!isVerified)
-                        Column(
-                          children: [
-                            const CircularProgressIndicator(color: Colors.blueAccent),
-                            const SizedBox(height: 10),
-                            Text(
-                              "Waiting for verification...",
-                              style: TextStyle(fontSize: 14, color: Colors.grey),
-                            ),
-                            const SizedBox(height: 15),
-                            ElevatedButton(
-                              onPressed: isResendDisabled ? null : _resendVerificationEmail,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: isResendDisabled ? Colors.grey : Colors.blueAccent,
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                              ),
-                              child: Text(
-                                isResendDisabled
-                                    ? "Resend in $resendCooldown sec"
-                                    : "Resend Email",
-                                style: const TextStyle(fontSize: 14),
-                              ),
-                            ),
-                          ],
+                      ElevatedButton(
+                        onPressed: isResendDisabled ? null : _resendVerificationEmail,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: isResendDisabled ? Colors.grey : Colors.blue,
                         ),
-                      const SizedBox(height: 10),
-                      if (isVerified)
-                        ElevatedButton(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.green,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
-                          ),
-                          child: const Text("Continue", style: TextStyle(color: Colors.white)),
+                        child: Text(
+                          isResendDisabled
+                              ? "Resend in $resendCooldown sec"
+                              : "Resend Email",
                         ),
+                      ),
                     ],
-                  ),
+                    if (isVerified) ...[
+                      const Icon(Icons.verified, color: Colors.green, size: 40),
+                      const SizedBox(height: 10),
+                      ElevatedButton(
+                        onPressed: () async {
+                          // Save user info before moving
+                          await FirebaseFirestore.instance
+                              .collection("users")
+                              .doc(user.uid)
+                              .set({
+                            'email': user.email,
+                            'createdAt': FieldValue.serverTimestamp(),
+                            'profileCompleted': false,
+                          });
+
+                          if (context.mounted) {
+                            Navigator.pop(context); // Close dialog
+                            Navigator.pushReplacement(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ProfileSetupScreen(),
+                              ),
+                            );
+                          }
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green,
+                        ),
+                        child: const Text("Continue"),
+                      ),
+                    ],
+                  ],
                 ),
               ),
             );
@@ -241,12 +215,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final screenSize = MediaQuery.of(context).size;
+
     return Scaffold(
       backgroundColor: Colors.black,
       body: Padding(
@@ -255,12 +228,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
           child: SingleChildScrollView(
             child: Column(
               children: [
-                // Lottie.asset(
-                //   'assets/animations/signup.json',
-                //   width: 180,
-                //   height: 180,
-                //   fit: BoxFit.cover,
-                // ),
                 const SizedBox(height: 10),
                 Text(
                   "Create Account",
@@ -270,19 +237,15 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     color: isDark ? Colors.white : Colors.black,
                   ),
                 ).animate().fade(duration: 500.ms).slideY(),
-
                 const SizedBox(height: 10),
-
                 Text(
                   "Sign up with your email and password to get started!",
                   style: TextStyle(
                     fontSize: screenSize.width * 0.04,
                     color: isDark ? Colors.grey.shade400 : Colors.grey.shade600,
-                  ),textAlign: TextAlign.center,
+                  ),
+                  textAlign: TextAlign.center,
                 ).animate().fade(duration: 700.ms),
-
-
-
                 const SizedBox(height: 20),
                 Form(
                   key: _formKey,
@@ -292,13 +255,13 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         controller: _emailController,
                         label: "Email",
                         icon: Icons.email_outlined,
-                        keyboardType: TextInputType.emailAddress,
                         isDark: isDark,
-                        errorText: _emailError,
+                        keyboardType: TextInputType.emailAddress,
                         validator: (value) {
                           if (value == null || value.isEmpty) return "Enter your email";
-                          if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-                              .hasMatch(value)) return "Enter a valid email";
+                          if (!RegExp(r"^[\w-\.]+@([\w-]+\.)+[\w]{2,4}$").hasMatch(value)) {
+                            return "Enter a valid email";
+                          }
                           return null;
                         },
                       ),
@@ -309,7 +272,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         icon: Icons.lock_outline,
                         obscureText: _obscurePassword,
                         isDark: isDark,
-                        errorText: _passwordError,
                         suffixIcon: IconButton(
                           icon: Icon(
                             _obscurePassword ? Icons.visibility_off : Icons.visibility,
@@ -327,17 +289,12 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           return null;
                         },
                       ),
-
                     ],
                   ),
                 ),
                 const SizedBox(height: 20),
                 _isLoading
-                    ? Lottie.asset(
-                  'assets/animations/loading.json',
-                  width: 100,
-                  height: 100,
-                )
+                    ? Lottie.asset('assets/animations/loading.json', width: 100, height: 100)
                     : _buildButton("Sign Up", _signUp, isDark),
                 const SizedBox(height: 10),
                 Row(
@@ -348,12 +305,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
                     ),
                     TextButton(
-                      onPressed: () {Navigator.pushReplacement(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) => LoginScreen(),
-                        ),
-                      );
+                      onPressed: () {
+                        Navigator.pushReplacement(
+                          context,
+                          MaterialPageRoute(builder: (context) =>  LoginScreen()),
+                        );
                       },
                       child: Text(
                         "Log In",
@@ -398,14 +354,9 @@ class _SignUpScreenState extends State<SignUpScreen> {
         errorText: errorText,
       ),
       validator: validator,
-      onTap: () {
-        setState(() {
-          _emailError = null;
-          _passwordError = null;
-        });
-      },
     );
   }
+
   Widget _buildButton(String text, VoidCallback onPressed, bool isDark) {
     return SizedBox(
       width: double.infinity,
@@ -416,7 +367,10 @@ class _SignUpScreenState extends State<SignUpScreen> {
           backgroundColor: isDark ? Colors.white : Colors.black,
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         ),
-        child: Text(text, style: TextStyle(fontSize: 16, color: isDark ? Colors.black : Colors.white)),
+        child: Text(
+          text,
+          style: TextStyle(fontSize: 16, color: isDark ? Colors.black : Colors.white),
+        ),
       ),
     );
   }

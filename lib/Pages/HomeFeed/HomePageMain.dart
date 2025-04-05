@@ -7,7 +7,7 @@ import 'package:orbit/Pages/HomeFeed/AddPostPage.dart';
 import 'package:orbit/Pages/HomeFeed/ExplorePage.dart';
 import 'package:orbit/Pages/HomeFeed/FeedPage.dart';
 import 'package:orbit/Pages/HomeFeed/InboxPage.dart';
-import 'package:orbit/Pages/HomeFeed/ProfilePage.dart';
+import 'package:orbit/Pages/HomeFeed/Profile/ProfilePage.dart';
 import 'package:orbit/Pages/MiscellaneousPage/LeftDrawer.dart';
 import 'package:orbit/Pages/MiscellaneousPage/RightDrawer.dart';
 

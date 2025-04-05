@@ -2,7 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
-import 'package:orbit/Pages/HomeFeed/ProfilePage.dart';
+import 'package:orbit/Pages/HomeFeed/Profile/ProfilePage.dart';
 import 'package:orbit/Pages/MiscellaneousPage/FollowerList.dart';
 import 'package:orbit/Pages/MiscellaneousPage/Premium.dart';
 import 'package:orbit/Pages/MiscellaneousPage/UserHistory.dart';
