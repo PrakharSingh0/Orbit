@@ -161,14 +161,14 @@ class ApplicationInfoPage extends StatelessWidget {
           borderRadius: BorderRadius.circular(12),
           color: Colors.blueAccent,
         ),
-        child: Row(
+        child: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.open_in_new, size: 18, color: Colors.white),
-            const SizedBox(width: 8),
+            Icon(Icons.open_in_new, size: 18, color: Colors.white),
+            SizedBox(width: 8),
             Text(
               "View on GitHub",
-              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500, color: Colors.white),
             ),
           ],
         ),

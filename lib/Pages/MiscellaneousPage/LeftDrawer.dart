@@ -135,7 +135,7 @@ class LeftDrawer extends StatelessWidget {
 
       // Navigate to the Welcome Screen and remove all previous routes
       Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute(builder: (context) =>  WelcomeScreen()),
+        MaterialPageRoute(builder: (context) =>  const WelcomeScreen()),
             (route) => false,
       );
     } catch (e) {

@@ -4,6 +4,8 @@ import 'LoginPage.dart';
 import 'SingUpPage.dart';
 
 class WelcomeScreen extends StatelessWidget {
+  const WelcomeScreen({super.key});
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -44,9 +46,9 @@ class WelcomeScreen extends StatelessWidget {
               const SizedBox(height: 50),
 
               // Buttons
-              _buildButton(context, "Login", LoginScreen(), screenSize),
+              _buildButton(context, "Login", const LoginScreen(), screenSize),
               const SizedBox(height: 15),
-              _buildButton(context, "Sign Up", SignUpScreen(), screenSize, outlined: true),
+              _buildButton(context, "Sign Up", const SignUpScreen(), screenSize, outlined: true),
 
               const SizedBox(height: 40),
 

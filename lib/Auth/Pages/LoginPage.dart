@@ -9,6 +9,8 @@ import '../../service/auth_Service.dart';
 import 'ProfileSetupPage.dart';
 
 class LoginScreen extends StatefulWidget {
+  const LoginScreen({super.key});
+
   @override
   _LoginScreenState createState() => _LoginScreenState();
 }
@@ -117,7 +119,9 @@ class _LoginScreenState extends State<LoginScreen> {
                       validator: (value) {
                         if (value == null || value.isEmpty) return "Enter your email";
                         if (!RegExp(r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
-                            .hasMatch(value)) return "Enter a valid email";
+                            .hasMatch(value)) {
+                          return "Enter a valid email";
+                        }
                         return null;
                       },
                     ),
@@ -193,7 +197,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           onPressed: () {
                             Navigator.pushReplacement(
                               context,
-                              MaterialPageRoute(builder: (context) => SignUpScreen()),
+                              MaterialPageRoute(builder: (context) => const SignUpScreen()),
                             );
                           },
                           child: Text(

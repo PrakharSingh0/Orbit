@@ -146,12 +146,12 @@ class _CommentPageState extends State<CommentPage> {
                         // Post Content
                         Text(
                           widget.postTitle,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
                         ),
                         const SizedBox(height: 6),
                         Text(
                           widget.postContent,
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
+                          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w400),
                         ),
                         const SizedBox(height: 8),
 
@@ -209,7 +209,7 @@ class _CommentPageState extends State<CommentPage> {
                               const SizedBox(height: 4),
                               Text(
                                 comments[index]['comment'],
-                                style: TextStyle(fontSize: 14),
+                                style: const TextStyle(fontSize: 14),
                               ),
                               Row(
                                 children: [

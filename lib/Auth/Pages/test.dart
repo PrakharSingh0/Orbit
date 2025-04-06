@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:lottie/lottie.dart';
 
 class LottiePage extends StatefulWidget {
+  const LottiePage({super.key});
+
   @override
   _LottiePageState createState() => _LottiePageState();
 }

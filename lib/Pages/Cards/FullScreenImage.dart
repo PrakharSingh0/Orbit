@@ -53,7 +53,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
                 imageProvider: AssetImage(widget.imagePath),
                 minScale: PhotoViewComputedScale.contained,
                 maxScale: PhotoViewComputedScale.covered * 2,
-                backgroundDecoration: BoxDecoration(color: Colors.transparent),
+                backgroundDecoration: const BoxDecoration(color: Colors.transparent),
                 controller: _photoViewController, // Pass the controller
               ),
             ),
@@ -65,7 +65,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
             left: 16,
             child: IconButton(
               onPressed: () => Navigator.pop(context),
-              icon: Icon(
+              icon: const Icon(
                 Icons.arrow_back,
                 color: Colors.white,
                 size: 28,
@@ -79,7 +79,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
             right: 16,
             child: IconButton(
               onPressed: () => PostOptions.show(context),
-              icon: Icon(
+              icon: const Icon(
                 Bootstrap.three_dots,
                 color: Colors.white,
                 size: 24,
@@ -108,7 +108,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   // Post Title
-                  Text(
+                  const Text(
                     "Post Heading goes here...",
                     style: TextStyle(
                       fontSize: 18,
@@ -130,12 +130,12 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
                       fontWeight: FontWeight.w400,
                       color: Colors.white.withOpacity(0.8),
                     ),
-                    moreStyle: TextStyle(
+                    moreStyle: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.blue,
                     ),
-                    lessStyle: TextStyle(
+                    lessStyle: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: Colors.blue,

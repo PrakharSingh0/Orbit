@@ -71,7 +71,7 @@ class _ProfileState extends State<Profile> {
             joined = createdAt != null
                 ? DateFormat('MMMM yyyy').format(createdAt.toDate())
                 : 'Not set';
-            profilePic = data['profilePic'] ?? '';
+            profilePic = data['profilePictureUrl'] ?? ''; // ✅ fixed
             follower = data['follower'] ?? 0;
             following = data['following'] ?? 0;
           });
@@ -83,6 +83,7 @@ class _ProfileState extends State<Profile> {
       setState(() => isLoading = false);
     }
   }
+
   void _navigateFromSide(BuildContext context, Widget page) {
     Navigator.of(context).push(
       PageRouteBuilder(
@@ -148,8 +149,7 @@ class _ProfileState extends State<Profile> {
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
-                        borderRadius:
-                        const BorderRadius.only(bottomRight: Radius.circular(25)),
+                        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(25)),
                         color: Colors.black.withOpacity(0.3),
                       ),
                     ),
@@ -184,7 +184,7 @@ class _ProfileState extends State<Profile> {
                   ),
                 ],
               ),
-              // const SizedBox(height: 0),
+              // const SizedBox(height: 20),
 
               // Profile Info
               Padding(
@@ -192,15 +192,8 @@ class _ProfileState extends State<Profile> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(userName,
-                        style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.w800,
-                            color: textColor)),
-                    Text('@$userTag',
-                        style: TextStyle(
-                            fontSize: 14,
-                            color: theme.textTheme.bodySmall?.color)),
+                    Text(userName, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: textColor)),
+                    Text('@$userTag', style: TextStyle(fontSize: 14, color: theme.textTheme.bodySmall?.color)),
                     const SizedBox(height: 10),
                     buildBio(bio),
                     const SizedBox(height: 10),
@@ -227,6 +220,8 @@ class _ProfileState extends State<Profile> {
                       ],
                     ),
                     const SizedBox(height: 15),
+
+                    // Stats
                     Row(
                       mainAxisAlignment: MainAxisAlignment.start,
                       children: [
@@ -237,10 +232,9 @@ class _ProfileState extends State<Profile> {
                         _buildStatCard("Following", following.toString(), Icons.person_rounded, const UserFollowerList(initialTabIndex: 1)),
                       ],
                     ),
-
                     const SizedBox(height: 15),
 
-                    // Action Buttons
+                    // Buttons
                     Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
@@ -257,16 +251,14 @@ class _ProfileState extends State<Profile> {
                               MaterialPageRoute(builder: (_) => const EditProfilePage()),
                             );
                             if (updated == true) {
-                              fetchUserData(); // Auto-refresh
+                              fetchUserData(); // Refresh if updated
                             }
                           },
-
                           icon: Clarity.edit_line,
                           label: "Edit Profile",
                         ),
                       ],
                     ),
-
                   ],
                 ),
               ),
@@ -279,25 +271,15 @@ class _ProfileState extends State<Profile> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      Text("Thread",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 20)),
+                      Text("Thread", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                       SizedBox(width: 20),
-                      Text("Media",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 20)),
+                      Text("Media", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                       SizedBox(width: 20),
-                      Text("Comment",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 20)),
+                      Text("Comment", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                       SizedBox(width: 20),
-                      Text("Liked",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 20)),
+                      Text("Liked", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                       SizedBox(width: 20),
-                      Text("Social",
-                          style: TextStyle(
-                              fontWeight: FontWeight.bold, fontSize: 20)),
+                      Text("Social", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20)),
                     ],
                   ),
                 ),
@@ -343,13 +325,7 @@ class _ProfileState extends State<Profile> {
           children: [
             Icon(icon, size: 16, color: Theme.of(context).textTheme.bodyLarge?.color),
             const SizedBox(width: 10),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 14,
-                color: Theme.of(context).textTheme.bodyLarge?.color,
-              ),
-            ),
+            Text(label, style: TextStyle(fontSize: 14, color: Theme.of(context).textTheme.bodyLarge?.color)),
           ],
         ),
       ),
@@ -373,14 +349,14 @@ class _ProfileState extends State<Profile> {
             if (shouldTruncate)
               TextSpan(
                 text: isExpanded ? " Show less" : " Show More ...",
-                style: const TextStyle(
-                    fontWeight: FontWeight.w700, fontSize: 12, color: Colors.blueGrey),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Colors.blueGrey),
               ),
           ],
         ),
       ),
     );
   }
+
   Widget _buildStatCard(String title, String value, IconData icon, Widget page) {
     return GestureDetector(
       onTap: () => _navigateFromSide(context, page),

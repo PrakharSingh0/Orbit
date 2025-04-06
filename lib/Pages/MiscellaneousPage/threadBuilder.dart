@@ -33,8 +33,8 @@ class _ProfileState extends State<Profile> {
                     height: 180,
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.only(bottomRight: Radius.circular(25)),
-                      boxShadow: [
-                        const BoxShadow(
+                      boxShadow: const [
+                        BoxShadow(
                           color: Colors.black54, // Subtle black shadow
                           spreadRadius:1, // How much it spreads
                           blurRadius: 20,  // Smooth blur

@@ -5,7 +5,6 @@ import 'package:lottie/lottie.dart';
 import 'package:orbit/Pages/HomeFeed/HomePageMain.dart';
 import 'package:orbit/service/auth_Service.dart';
 import 'package:provider/provider.dart';
-import 'Auth/Pages/ProfileSetupPage.dart';
 import 'Auth/Pages/welcomePage.dart';
 import 'ThemeData/theme_provider.dart';
 
@@ -33,7 +32,7 @@ class MyApp extends StatelessWidget {
             themeMode: themeProvider.themeMode, // Apply the theme mode
             theme: ThemeData.light(),
             darkTheme: ThemeData.dark(),
-            home: AuthWrapper(),
+            home: const AuthWrapper(),
           );
         },
       ),
@@ -42,6 +41,8 @@ class MyApp extends StatelessWidget {
 }
 
 class AuthWrapper extends StatefulWidget {
+  const AuthWrapper({super.key});
+
   @override
   _AuthWrapperState createState() => _AuthWrapperState();
 }
@@ -72,7 +73,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
           User? user = snapshot.data;
 
           if (user == null) {
-            return WelcomeScreen();
+            return const WelcomeScreen();
           } else {
             return FutureBuilder<bool>(
               future: AuthService().isProfileSetupComplete(user.uid),
@@ -82,7 +83,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
                     child: Lottie.asset('assets/animations/loading.json', width: 100, height: 100),
                   );
                 } else if (profileSnapshot.hasData && !profileSnapshot.data!) {
-                  return  WelcomeScreen();
+                  return  const WelcomeScreen();
                 } else {
                   return const HomePageMain();
                 }

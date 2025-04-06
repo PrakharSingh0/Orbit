@@ -23,6 +23,7 @@ class _RightDrawerState extends State<RightDrawer> {
   String userid = "";
   String follower = "0";
   String following = "0";
+  String profilePic = "";
   bool onlineStatus = false;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
@@ -59,6 +60,7 @@ class _RightDrawerState extends State<RightDrawer> {
         follower = userData.containsKey("followers") ? userData["followers"].toString() : "0";
         following = userData.containsKey("following") ? userData["following"].toString() : "0";
         onlineStatus = userData.containsKey("status") ? userData["status"] : false;
+        profilePic = userData['profilePictureUrl'] ?? ''; // ✅ fixed
         _isOnline = onlineStatus;
       });
 
@@ -127,9 +129,10 @@ class _RightDrawerState extends State<RightDrawer> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              radius: 22,
-                              backgroundColor: Colors.grey[300],
-                              backgroundImage: const AssetImage("assets/avatar.jpg"),
+                              backgroundImage: profilePic.isNotEmpty
+                                  ? NetworkImage(profilePic)
+                                  : const AssetImage("assets/avatar.jpg") as ImageProvider,
+                              radius: 45,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -138,7 +141,7 @@ class _RightDrawerState extends State<RightDrawer> {
                                 children: [
                                   Text(
                                     username,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontSize: 18,
                                       fontWeight: FontWeight.bold,
                                      // Modern, clean color
@@ -150,7 +153,7 @@ class _RightDrawerState extends State<RightDrawer> {
 
                                   Text(
                                     userid,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       color: Colors.blueGrey, // Stylish color
                                       fontSize: 14,
                                       fontWeight: FontWeight.w600,

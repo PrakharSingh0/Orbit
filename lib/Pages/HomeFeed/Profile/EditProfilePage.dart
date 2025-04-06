@@ -6,6 +6,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 
+import '../../../service/cloudinary_Upload.dart';
+
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
 
@@ -24,7 +26,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   DateTime? selectedDOB;
   String selectedGender = "Male";
-  File? _profileImage;
+  String? _profileImageUrl;
+  File? _newProfileImageFile;
+
   bool isLoading = true;
   bool isUsernameUnique = true;
   bool isCheckingUsername = false;
@@ -90,6 +94,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
         jobController.text = data['profession'] ?? '';
         locationController.text = data['location'] ?? '';
         selectedGender = data['gender'] ?? 'Prefer not to say';
+        _profileImageUrl = data['profilePictureUrl'];
         isLoading = false;
       });
     }
@@ -114,17 +119,27 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
     final trimmedTag = usernameController.text.trim().toLowerCase();
 
-    final updatedData = {
-      "userName": nameController.text.trim(),
-      "userTag": trimmedTag,
-      "bio": bioController.text.trim(),
-      "profession": jobController.text.trim(),
-      "location": locationController.text.trim(),
-      "gender": selectedGender,
-      "dob": selectedDOB != null ? DateFormat("MMM d, yyyy").format(selectedDOB!) : null,
-    };
-
     try {
+      String? finalImageUrl = _profileImageUrl;
+
+      if (_newProfileImageFile != null) {
+        final uploadedUrl = await pickCompressAndUploadImage(_newProfileImageFile!);
+        if (uploadedUrl != null) {
+          finalImageUrl = uploadedUrl;
+        }
+      }
+
+      final updatedData = {
+        "userName": nameController.text.trim(),
+        "userTag": trimmedTag,
+        "bio": bioController.text.trim(),
+        "profession": jobController.text.trim(),
+        "location": locationController.text.trim(),
+        "gender": selectedGender,
+        "dob": selectedDOB != null ? DateFormat("MMM d, yyyy").format(selectedDOB!) : null,
+        "profilePictureUrl": finalImageUrl,
+      };
+
       await firestore.collection("users").doc(user!.uid).update(updatedData);
       await firestore.collection("userTags").doc(trimmedTag).set({'uid': user!.uid});
 
@@ -147,10 +162,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _selectProfilePicture() async {
     final picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked != null) {
-      setState(() => _profileImage = File(picked.path));
+      setState(() {
+        _newProfileImageFile = File(picked.path);
+      });
     }
   }
 
@@ -191,12 +208,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 CircleAvatar(
                   radius: 60,
-                  backgroundImage: _profileImage != null
-                      ? FileImage(_profileImage!)
+                  backgroundImage: _newProfileImageFile != null
+                      ? FileImage(_newProfileImageFile!)
+                      : _profileImageUrl != null
+                      ? NetworkImage(_profileImageUrl!)
                       : const AssetImage("assets/avatar.jpg") as ImageProvider,
                 ),
                 GestureDetector(
-                  onTap: _pickImage,
+                  onTap: _selectProfilePicture,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
@@ -235,13 +254,11 @@ class _EditProfilePageState extends State<EditProfilePage> {
     );
   }
 
-  Widget _buildField(
-      BuildContext context, {
-        required TextEditingController controller,
+  Widget _buildField(BuildContext context,
+      {required TextEditingController controller,
         required String label,
         required IconData icon,
-        int maxLines = 1,
-      }) {
+        int maxLines = 1}) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -291,19 +308,14 @@ class _EditProfilePageState extends State<EditProfilePage> {
           if (isCheckingUsername)
             Text("Checking availability...", style: TextStyle(color: theme.hintColor, fontSize: 12)),
           if (!isUsernameUnique && !isCheckingUsername)
-            Text("This username is already taken", style: const TextStyle(color: Colors.red, fontSize: 12)),
+            const Text("This username is already taken", style: TextStyle(color: Colors.red, fontSize: 12)),
         ],
       ),
     );
   }
 
-  Widget _buildTile(
-      BuildContext context, {
-        required String title,
-        required String subtitle,
-        required IconData icon,
-        required VoidCallback onTap,
-      }) {
+  Widget _buildTile(BuildContext context,
+      {required String title, required String subtitle, required IconData icon, required VoidCallback onTap}) {
     final theme = Theme.of(context);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 0),

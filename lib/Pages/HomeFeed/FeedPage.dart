@@ -11,14 +11,14 @@ class FeedPage extends StatefulWidget {
 class _FeedPageState extends State<FeedPage> {
   @override
   Widget build(BuildContext context) {
-    return SingleChildScrollView(
+    return const SingleChildScrollView(
         child: Column(
       children: [
         // const Divider(
         //   thickness: 0.1,
         // ),
-        const ThreadCard(),
-        const Divider(
+        ThreadCard(),
+        Divider(
           thickness: 0.1,
         ),
         // const ThreadCard(),

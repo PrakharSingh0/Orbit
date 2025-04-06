@@ -4,7 +4,6 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:lottie/lottie.dart';
 import 'package:orbit/Auth/Pages/LoginPage.dart';
-import '../../service/auth_Service.dart';
 import 'ProfileSetupPage.dart';
 
 class SignUpScreen extends StatefulWidget {
@@ -66,7 +65,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setState) {
-            Future<void> _checkVerificationLoop() async {
+            Future<void> checkVerificationLoop() async {
               for (int i = 0; i < 120; i++) {
                 await Future.delayed(const Duration(seconds: 5));
                 await user.reload();
@@ -93,7 +92,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               setState(() {});
             }
 
-            void _resendVerificationEmail() async {
+            void resendVerificationEmail() async {
               try {
                 await user.sendEmailVerification();
                 setState(() {
@@ -118,7 +117,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
               }
             }
 
-            _checkVerificationLoop();
+            checkVerificationLoop();
 
             return WillPopScope(
               onWillPop: () async {
@@ -163,7 +162,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       ),
                       const SizedBox(height: 15),
                       ElevatedButton(
-                        onPressed: isResendDisabled ? null : _resendVerificationEmail,
+                        onPressed: isResendDisabled ? null : resendVerificationEmail,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: isResendDisabled ? Colors.grey : Colors.blue,
                         ),
@@ -308,7 +307,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) =>  LoginScreen()),
+                          MaterialPageRoute(builder: (context) =>  const LoginScreen()),
                         );
                       },
                       child: Text(

@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/Cards/FullScreenImage.dart';
-import 'package:photo_view/photo_view.dart'; // For full-screen image viewer
-import 'package:readmore/readmore.dart';
+// For full-screen image viewer
 
 import 'CommentPage.dart';
 import 'PostOption.dart'; // For expandable text
@@ -59,7 +58,7 @@ class _ThreadCardState extends State<ThreadCard> {
   void _handleComment() {
     Navigator.of(context).push(
       PageRouteBuilder(
-        transitionDuration: Duration(milliseconds: 300),
+        transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (_, __, ___) => CommentPage(
           username: "UserName",
           userId: "@UserID",
@@ -218,7 +217,7 @@ class _ThreadCardState extends State<ThreadCard> {
                 child: ClipRRect(
                   borderRadius: BorderRadius.circular(12),
                   child: ConstrainedBox(
-                    constraints: BoxConstraints(
+                    constraints: const BoxConstraints(
                       maxHeight: 300,
                       minWidth: double.infinity, // Maximum height of 300
                     ),
