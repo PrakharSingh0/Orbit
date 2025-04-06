@@ -1,12 +1,13 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
-
-import '../../../service/cloudinary_Upload.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
+import 'package:http/http.dart' as http;
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -26,9 +27,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   DateTime? selectedDOB;
   String selectedGender = "Male";
-  String? _profileImageUrl;
-  File? _newProfileImageFile;
-
+  File? _profileImage;
   bool isLoading = true;
   bool isUsernameUnique = true;
   bool isCheckingUsername = false;
@@ -94,7 +93,6 @@ class _EditProfilePageState extends State<EditProfilePage> {
         jobController.text = data['profession'] ?? '';
         locationController.text = data['location'] ?? '';
         selectedGender = data['gender'] ?? 'Prefer not to say';
-        _profileImageUrl = data['profilePictureUrl'];
         isLoading = false;
       });
     }
@@ -114,32 +112,55 @@ class _EditProfilePageState extends State<EditProfilePage> {
     });
   }
 
+  Future<void> _pickImage() async {
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() => _profileImage = File(picked.path));
+    }
+  }
+
+  Future<void> _pickDOB() async {
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: selectedDOB ?? DateTime(2000),
+      firstDate: DateTime(1900),
+      lastDate: DateTime.now(),
+    );
+    if (picked != null) {
+      setState(() => selectedDOB = picked);
+    }
+  }
+
   Future<void> _saveProfile() async {
     if (user == null || !isUsernameUnique) return;
 
+    String? uploadedImageUrl;
+    if (_profileImage != null) {
+      uploadedImageUrl = await _uploadToCloudinary(_profileImage!);
+      if (uploadedImageUrl == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Failed to upload profile image")),
+        );
+        return;
+      }
+    }
+
     final trimmedTag = usernameController.text.trim().toLowerCase();
+    final updatedData = {
+      "userName": nameController.text.trim(),
+      "userTag": trimmedTag,
+      "bio": bioController.text.trim(),
+      "profession": jobController.text.trim(),
+      "location": locationController.text.trim(),
+      "gender": selectedGender,
+      "dob": selectedDOB != null ? DateFormat("MMM d, yyyy").format(selectedDOB!) : null,
+    };
+
+    if (uploadedImageUrl != null) {
+      updatedData["profilePictureUrl"] = uploadedImageUrl;
+    }
 
     try {
-      String? finalImageUrl = _profileImageUrl;
-
-      if (_newProfileImageFile != null) {
-        final uploadedUrl = await pickCompressAndUploadImage(_newProfileImageFile!);
-        if (uploadedUrl != null) {
-          finalImageUrl = uploadedUrl;
-        }
-      }
-
-      final updatedData = {
-        "userName": nameController.text.trim(),
-        "userTag": trimmedTag,
-        "bio": bioController.text.trim(),
-        "profession": jobController.text.trim(),
-        "location": locationController.text.trim(),
-        "gender": selectedGender,
-        "dob": selectedDOB != null ? DateFormat("MMM d, yyyy").format(selectedDOB!) : null,
-        "profilePictureUrl": finalImageUrl,
-      };
-
       await firestore.collection("users").doc(user!.uid).update(updatedData);
       await firestore.collection("userTags").doc(trimmedTag).set({'uid': user!.uid});
 
@@ -162,24 +183,35 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
-  Future<void> _selectProfilePicture() async {
-    final picked = await picker.pickImage(source: ImageSource.gallery);
-    if (picked != null) {
-      setState(() {
-        _newProfileImageFile = File(picked.path);
-      });
-    }
-  }
+  Future<String?> _uploadToCloudinary(File file) async {
+    try {
+      final compressed = await FlutterImageCompress.compressWithFile(
+        file.absolute.path,
+        minWidth: 400,
+        minHeight: 400,
+        quality: 50,
+      );
 
-  Future<void> _pickDOB() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: selectedDOB ?? DateTime(2000),
-      firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
-    );
-    if (picked != null) {
-      setState(() => selectedDOB = picked);
+      if (compressed == null) return null;
+
+      final uri = Uri.parse('https://api.cloudinary.com/v1_1/orbit-01/image/upload');
+      final request = http.MultipartRequest('POST', uri)
+        ..fields['upload_preset'] = 'orbit-upload Preset'
+        ..files.add(http.MultipartFile.fromBytes('file', compressed, filename: 'profile.jpg'));
+
+      final res = await request.send();
+
+      if (res.statusCode == 200) {
+        final resBody = await res.stream.bytesToString();
+        final json = jsonDecode(resBody);
+        return json['secure_url'];
+      } else {
+        print('Upload failed: ${res.statusCode}');
+        return null;
+      }
+    } catch (e) {
+      print("Upload error: $e");
+      return null;
     }
   }
 
@@ -208,14 +240,12 @@ class _EditProfilePageState extends State<EditProfilePage> {
               children: [
                 CircleAvatar(
                   radius: 60,
-                  backgroundImage: _newProfileImageFile != null
-                      ? FileImage(_newProfileImageFile!)
-                      : _profileImageUrl != null
-                      ? NetworkImage(_profileImageUrl!)
+                  backgroundImage: _profileImage != null
+                      ? FileImage(_profileImage!)
                       : const AssetImage("assets/avatar.jpg") as ImageProvider,
                 ),
                 GestureDetector(
-                  onTap: _selectProfilePicture,
+                  onTap: _pickImage,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
@@ -241,9 +271,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
           _buildTile(
             context,
             title: "Date of Birth",
-            subtitle: selectedDOB != null
-                ? DateFormat("MMM d, yyyy").format(selectedDOB!)
-                : "Not set",
+            subtitle: selectedDOB != null ? DateFormat("MMM d, yyyy").format(selectedDOB!) : "Not set",
             icon: Icons.cake_outlined,
             onTap: _pickDOB,
           ),
@@ -255,10 +283,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildField(BuildContext context,
-      {required TextEditingController controller,
-        required String label,
-        required IconData icon,
-        int maxLines = 1}) {
+      {required TextEditingController controller, required String label, required IconData icon, int maxLines = 1}) {
     final theme = Theme.of(context);
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 10),
@@ -315,7 +340,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   }
 
   Widget _buildTile(BuildContext context,
-      {required String title, required String subtitle, required IconData icon, required VoidCallback onTap}) {
+      {required String title,
+        required String subtitle,
+        required IconData icon,
+        required VoidCallback onTap}) {
     final theme = Theme.of(context);
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 0),
