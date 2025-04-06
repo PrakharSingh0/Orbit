@@ -138,8 +138,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                 content: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Lottie.asset('assets/animations/loading.json', width: 100, height: 100),
-                    const SizedBox(height: 10),
                     Text(
                       "Verify Your Email",
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
@@ -154,7 +152,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                     ),
                     const SizedBox(height: 20),
                     if (!isVerified) ...[
-                      const CircularProgressIndicator(),
+                      Lottie.asset('assets/animations/loading.json', width: 100, height: 100),
                       const SizedBox(height: 10),
                       Text(
                         "Waiting for verification...",

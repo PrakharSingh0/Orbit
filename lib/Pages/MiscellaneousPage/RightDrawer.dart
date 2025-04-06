@@ -11,7 +11,8 @@ import 'package:orbit/Pages/MiscellaneousPage/SettingsPage/Settings.dart';
 
 
 class RightDrawer extends StatefulWidget {
-  const RightDrawer({super.key});
+  final String? userId;
+  const RightDrawer({super.key, this.userId});
 
   @override
   State<RightDrawer> createState() => _RightDrawerState();
@@ -24,6 +25,10 @@ class _RightDrawerState extends State<RightDrawer> {
   String follower = "0";
   String following = "0";
   String profilePic = "";
+  String userUid = "";
+  String? currentUserId;
+  bool isOwnProfile = true;
+
   bool onlineStatus = false;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
@@ -31,6 +36,8 @@ class _RightDrawerState extends State<RightDrawer> {
   @override
   void initState() {
     super.initState();
+    currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    isOwnProfile = widget.userId == null || widget.userId == currentUserId;
     fetchUser();
   }
 
@@ -46,6 +53,7 @@ class _RightDrawerState extends State<RightDrawer> {
 
       setState(() {
         // Format username: Capitalize first letter of each word
+        userUid=user!.uid;
         String rawUsername = userData.containsKey("userName") ? userData["userName"] : "Unknown";
         username = rawUsername
             .trim()
@@ -131,7 +139,7 @@ class _RightDrawerState extends State<RightDrawer> {
                             CircleAvatar(
                               backgroundImage: profilePic.isNotEmpty
                                   ? NetworkImage(profilePic)
-                                  : const AssetImage("assets/avatar.jpg") as ImageProvider,
+                                  : const AssetImage("assets/avatar_placeholder.png") as ImageProvider,
                               radius: 35,
                             ),
                             const SizedBox(width: 8),
@@ -202,9 +210,9 @@ class _RightDrawerState extends State<RightDrawer> {
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
                           _buildStatCard("Follower", follower,
-                              const UserFollowerList(initialTabIndex: 0)),
+                              FollowListPage( userId: userUid,initialPageIndex: 0, currentUserId: widget.userId ?? currentUserId!,)),
                           _buildStatCard("Following", following,
-                              const UserFollowerList(initialTabIndex: 1)),
+                              FollowListPage( userId: userUid,initialPageIndex: 1, currentUserId: widget.userId ?? currentUserId!)),
                         ],
                       ),
 
@@ -214,7 +222,7 @@ class _RightDrawerState extends State<RightDrawer> {
                       // Drawer Menu Items
                       Column(
                         children: [
-                          _buildDrawerItem(Icons.person, "Profile", const Profile()),
+                          _buildDrawerItem(Icons.person, "Profile", const ProfilePage()),
                           _buildDrawerItem(Icons.bookmark, "Saved", const UserSavedPost()),
                           _buildDrawerItem(Icons.history, "History", const UserHistory()),
                           _buildDrawerItem(Icons.workspace_premium, "Premium", const Premium()),

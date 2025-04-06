@@ -7,15 +7,18 @@ import 'package:intl/intl.dart';
 import '../../MiscellaneousPage/FollowerList.dart';
 import 'EditProfilePage.dart';
 
-class Profile extends StatefulWidget {
-  const Profile({super.key});
+class ProfilePage extends StatefulWidget {
+  final String? userId;
+
+  const ProfilePage({super.key, this.userId});
 
   @override
-  State<Profile> createState() => _ProfileState();
+  State<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfileState extends State<Profile> {
+class _ProfilePageState extends State<ProfilePage> {
   bool isExpanded = false;
+
 
   String userName = 'Loading...';
   String userTag = '';
@@ -30,23 +33,30 @@ class _ProfileState extends State<Profile> {
   int following = 0;
   bool isLoading = true;
 
+  String? currentUserId;
+  bool isOwnProfile = true;
+  bool isFollowing = false;
+
   @override
   void initState() {
     super.initState();
+    currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    isOwnProfile = widget.userId == null || widget.userId == currentUserId;
     fetchUserData();
+    if (!isOwnProfile) checkFollowingStatus();
   }
 
   Future<void> fetchUserData() async {
     setState(() => isLoading = true);
     try {
-      final uid = FirebaseAuth.instance.currentUser?.uid;
+      final uid = widget.userId ?? currentUserId;
       if (uid != null) {
         final doc =
-            await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        await FirebaseFirestore.instance.collection('users').doc(uid).get();
         if (doc.exists) {
           final data = doc.data()!;
           Timestamp? createdAt =
-              data['createdAt'] is Timestamp ? data['createdAt'] : null;
+          data['createdAt'] is Timestamp ? data['createdAt'] : null;
 
           final rawDob = data['dob'];
           String formattedDob = 'Not set';
@@ -76,8 +86,8 @@ class _ProfileState extends State<Profile> {
             joined = createdAt != null
                 ? DateFormat('MMMM yyyy').format(createdAt.toDate())
                 : 'Not set';
-            profilePic = data['profilePictureUrl'] ?? ''; // ✅ fixed
-            profileBanner = data['bannerImageUrl'] ?? ''; // ✅ fixed
+            profilePic = data['profilePictureUrl'] ?? '';
+            profileBanner = data['bannerImageUrl'] ?? '';
             follower = data['follower'] ?? 0;
             following = data['following'] ?? 0;
           });
@@ -87,6 +97,54 @@ class _ProfileState extends State<Profile> {
       print("Error fetching user data: $e");
     } finally {
       setState(() => isLoading = false);
+    }
+  }
+
+  Future<void> checkFollowingStatus() async {
+    final currentUid = currentUserId;
+    final targetUid = widget.userId;
+    if (currentUid == null || targetUid == null) return;
+
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(currentUid)
+        .collection('following')
+        .doc(targetUid)
+        .get();
+
+    setState(() => isFollowing = doc.exists);
+  }
+
+  Future<void> toggleFollow() async {
+    final currentUid = currentUserId;
+    final targetUid = widget.userId;
+    if (currentUid == null || targetUid == null) return;
+
+    final userRef = FirebaseFirestore.instance.collection('users');
+    final followingRef = userRef.doc(currentUid).collection('following').doc(targetUid);
+    final followerRef = userRef.doc(targetUid).collection('followers').doc(currentUid);
+
+    try {
+      if (isFollowing) {
+        await followingRef.delete();
+        await followerRef.delete();
+
+        await userRef.doc(currentUid).update({'following': FieldValue.increment(-1)});
+        await userRef.doc(targetUid).update({'follower': FieldValue.increment(-1)});
+      } else {
+        await followingRef.set({'followedAt': Timestamp.now()});
+        await followerRef.set({'followedAt': Timestamp.now()});
+
+        await userRef.doc(currentUid).update({'following': FieldValue.increment(1)});
+        await userRef.doc(targetUid).update({'follower': FieldValue.increment(1)});
+      }
+
+      setState(() {
+        isFollowing = !isFollowing;
+        follower += isFollowing ? 1 : -1;
+      });
+    } catch (e) {
+      print("Error updating follow status: $e");
     }
   }
 
@@ -123,239 +181,168 @@ class _ProfileState extends State<Profile> {
         leading: const BackButton(color: Colors.white),
         backgroundColor: Colors.transparent,
         actions: [
-          OutlinedButton(
+          if (isOwnProfile)
+            OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
-                  iconColor: Colors.white,
-                  foregroundColor: Colors.white,
-                  side: BorderSide(color: Colors.white)),
+                minimumSize: Size.zero,
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                side: const BorderSide(color: Colors.white, width: 1),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                foregroundColor: Colors.white,
+                textStyle: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
               onPressed: () async {
                 final updated = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (_) => const EditProfilePage()),
                 );
-                if (updated == true) {
-                  fetchUserData(); // Refresh if updated
-                }
+                if (updated == true) fetchUserData();
               },
-              child: const Row(
-                children: [
-                  Icon(EvaIcons.edit),
-                  SizedBox(
-                    width: 5,
-                  ),
-                  Text("Edit Profile")
-                ],
-              )),
-          SizedBox(width: 10)
-          // IconButton(
-          //   onPressed: () {},
-          //   icon: const Icon(BoxIcons.bx_menu_alt_right, color: Colors.white),
-          // ),
+              icon: const Icon(EvaIcons.edit, size: 18),
+              label: const Text("Edit"),
+            ),
+          if (!isOwnProfile)
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                minimumSize: Size.zero,
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                side: const BorderSide(color: Colors.white),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                foregroundColor: Colors.white,
+              ),
+              onPressed: toggleFollow,
+              child: Text(isFollowing ? 'Following' : 'Follow'),
+            ),
+          const SizedBox(width: 10),
         ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-              onRefresh: fetchUserData,
-              child: SingleChildScrollView(
-                physics: const AlwaysScrollableScrollPhysics(),
+        onRefresh: fetchUserData,
+        child: SingleChildScrollView(
+          physics: const AlwaysScrollableScrollPhysics(),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    height: 200,
+                    decoration: BoxDecoration(
+                      borderRadius: const BorderRadius.only(bottomRight: Radius.circular(25)),
+                      image: DecorationImage(
+                        image: profileBanner.isNotEmpty
+                            ? NetworkImage(profileBanner)
+                            : const AssetImage("assets/back.jpg") as ImageProvider,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Positioned.fill(
+                    child: Container(
+                      decoration: BoxDecoration(
+                        borderRadius: const BorderRadius.only(bottomRight: Radius.circular(25)),
+                        color: Colors.black.withOpacity(0.3),
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    right: 30,
+                    top: 150,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.3),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                        border: Border.all(
+                          color: theme.brightness == Brightness.light ? Colors.white : Colors.black54,
+                          width: 4,
+                        ),
+                      ),
+                      child: CircleAvatar(
+                        backgroundImage: profilePic.isNotEmpty
+                            ? NetworkImage(profilePic)
+                            : const AssetImage("assets/avatar_placeholder.png") as ImageProvider,
+                        radius: 56,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // Cover section
-                    Stack(
-                      clipBehavior: Clip.none,
+                    Text(userName, style: TextStyle(fontSize: 24, fontWeight: FontWeight.w800, color: textColor)),
+                    Text('@$userTag', style: TextStyle(fontSize: 14, color: theme.textTheme.bodySmall?.color)),
+                    const SizedBox(height: 10),
+                    buildBio(bio),
+                    const SizedBox(height: 10),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.start,
                       children: [
-                        Container(
-                          height: 200,
-                          decoration: BoxDecoration(
-                            borderRadius: const BorderRadius.only(
-                                bottomRight: Radius.circular(25)),
-                            image: DecorationImage(
-                              image: profileBanner.isNotEmpty
-                                  ? NetworkImage(profileBanner)
-                                  : const AssetImage("assets/back.jpg")
-                                      as ImageProvider,
-                              fit: BoxFit.cover,
-                            ),
-                          ),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _profileDetail(Icons.work, profession),
+                            _profileDetail(Icons.cake, "Born: $dob"),
+                          ],
                         ),
-                        Positioned.fill(
-                          child: Container(
-                            decoration: BoxDecoration(
-                              borderRadius: const BorderRadius.only(
-                                  bottomRight: Radius.circular(25)),
-                              color: Colors.black.withOpacity(0.3),
-                            ),
-                          ),
-                        ),
-                        Positioned(
-                          right: 30,
-                          top: 150,
-                          child: Container(
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.3),
-                                  blurRadius: 10,
-                                  offset: const Offset(0, 4),
-                                ),
-                              ],
-                              border: Border.all(
-                                color: theme.brightness == Brightness.light
-                                    ? Colors.white
-                                    : Colors.black54,
-                                width: 4,
-                              ),
-                            ),
-                            child: CircleAvatar(
-                              backgroundImage: profilePic.isNotEmpty
-                                  ? NetworkImage(profilePic)
-                                  : const AssetImage("assets/avatar.jpg")
-                                      as ImageProvider,
-                              radius: 56,
-                            ),
-                          ),
+                        const SizedBox(width: 20),
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _profileDetail(Icons.calendar_today, "Joined: $joined"),
+                            _profileDetail(Icons.location_on, location),
+                          ],
                         ),
                       ],
                     ),
-                    // const SizedBox(height: 20),
-
-                    // Profile Info
-                    Padding(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 10),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(userName,
-                              style: TextStyle(
-                                  fontSize: 24,
-                                  fontWeight: FontWeight.w800,
-                                  color: textColor)),
-                          Text('@$userTag',
-                              style: TextStyle(
-                                  fontSize: 14,
-                                  color: theme.textTheme.bodySmall?.color)),
-                          const SizedBox(height: 10),
-                          buildBio(bio),
-                          const SizedBox(height: 10),
-
-                          // Details
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _profileDetail(Icons.work, profession),
-                                  _profileDetail(Icons.cake, "Born: $dob"),
-                                ],
-                              ),
-                              const SizedBox(width: 20),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  _profileDetail(
-                                      Icons.calendar_today, "Joined: $joined"),
-                                  _profileDetail(Icons.location_on, location),
-                                ],
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 15),
-
-                          // Stats
-                          Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceAround,
-                            children: [
-                              _buildStatCard(
-                                  "Posts",
-                                  following.toString(),
-                                  Icons.grid_view_rounded,
-                                  const UserFollowerList(initialTabIndex: 1)),
-                              const SizedBox(width: 20),
-                              _buildStatCard(
-                                  "Follower",
-                                  follower.toString(),
-                                  Icons.person_add_alt_1_rounded,
-                                  const UserFollowerList(initialTabIndex: 0)),
-                              const SizedBox(width: 20),
-                              _buildStatCard(
-                                  "Following",
-                                  following.toString(),
-                                  Icons.person_rounded,
-                                  const UserFollowerList(initialTabIndex: 1)),
-                            ],
-                          ),
-                          const SizedBox(height: 15),
-
-                          // Buttons
-                          // Row(
-                          //   mainAxisAlignment: MainAxisAlignment.center,
-                          //   children: [
-                          //     customProfileButton(
-                          //       onPressed: () => print("Share Profile Clicked"),
-                          //       icon: Bootstrap.share,
-                          //       label: "Share Profile",
-                          //     ),
-                          //     const SizedBox(width: 15),
-                          //     customProfileButton(
-                          //       onPressed: () async {
-                          //         final updated = await Navigator.push(
-                          //           context,
-                          //           MaterialPageRoute(builder: (_) => const EditProfilePage()),
-                          //         );
-                          //         if (updated == true) {
-                          //           fetchUserData(); // Refresh if updated
-                          //         }
-                          //       },
-                          //       icon: Clarity.edit_line,
-                          //       label: "Edit Profile",
-                          //     ),
-                          //   ],
-                          // ),
-                        ],
-                      ),
+                    const SizedBox(height: 15),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatCard("Posts", following.toString(), Icons.grid_view_rounded, test()),
+                        const SizedBox(width: 20),
+                        _buildStatCard(
+                          "Follower",
+                          follower.toString(),
+                          Icons.person_add_alt_1_rounded,
+                          FollowListPage( userId: widget.userId ?? currentUserId!,initialPageIndex: 0, currentUserId: widget.userId ?? currentUserId!,),
+                        ),
+                        const SizedBox(width: 20),
+                        _buildStatCard(
+                          "Following",
+                          following.toString(),
+                          Icons.person_rounded,
+                          FollowListPage( userId: widget.userId ?? currentUserId!,initialPageIndex: 1, currentUserId: widget.userId ?? currentUserId!,),
+                        ),
+                      ],
                     ),
 
-                    // Navigation Tabs
-                    const SizedBox(height: 5),
-                    const Padding(
-                      padding: EdgeInsets.symmetric(horizontal: 20),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        // child: Row(
-                        //   children: [
-                        //     Text("Thread",
-                        //         style: TextStyle(
-                        //             fontWeight: FontWeight.bold, fontSize: 20)),
-                        //     SizedBox(width: 20),
-                        //     Text("Media",
-                        //         style: TextStyle(
-                        //             fontWeight: FontWeight.bold, fontSize: 20)),
-                        //     SizedBox(width: 20),
-                        //     Text("Comment",
-                        //         style: TextStyle(
-                        //             fontWeight: FontWeight.bold, fontSize: 20)),
-                        //     SizedBox(width: 20),
-                        //     Text("Liked",
-                        //         style: TextStyle(
-                        //             fontWeight: FontWeight.bold, fontSize: 20)),
-                        //     SizedBox(width: 20),
-                        //     Text("Social",
-                        //         style: TextStyle(
-                        //             fontWeight: FontWeight.bold, fontSize: 20)),
-                        //   ],
-                        // ),
-                      ),
-                    ),
-                    const Divider(),
+                    const SizedBox(height: 15),
                   ],
                 ),
               ),
-            ),
+              const Divider(),
+            ],
+          ),
+        ),
+      ),
     );
   }
 
@@ -372,37 +359,6 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget customProfileButton({
-    required VoidCallback onPressed,
-    required IconData icon,
-    required String label,
-  }) {
-    return Expanded(
-      child: OutlinedButton(
-        style: OutlinedButton.styleFrom(
-          elevation: 1,
-          padding: const EdgeInsets.symmetric(vertical: 0),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(15),
-          ),
-        ),
-        onPressed: onPressed,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon,
-                size: 16, color: Theme.of(context).textTheme.bodyLarge?.color),
-            const SizedBox(width: 10),
-            Text(label,
-                style: TextStyle(
-                    fontSize: 14,
-                    color: Theme.of(context).textTheme.bodyLarge?.color)),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget buildBio(String bio) {
     const int maxWords = 20;
     List<String> words = bio.split(' ');
@@ -414,16 +370,11 @@ class _ProfileState extends State<Profile> {
         text: TextSpan(
           style: TextStyle(fontSize: 15, height: 1.5, color: Colors.grey[700]),
           children: [
-            TextSpan(
-              text: isExpanded ? bio : words.take(maxWords).join(' '),
-            ),
+            TextSpan(text: isExpanded ? bio : words.take(maxWords).join(' ')),
             if (shouldTruncate)
               TextSpan(
                 text: isExpanded ? " Show less" : " Show More ...",
-                style: const TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    color: Colors.blueGrey),
+                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 12, color: Colors.blueGrey),
               ),
           ],
         ),
@@ -431,8 +382,7 @@ class _ProfileState extends State<Profile> {
     );
   }
 
-  Widget _buildStatCard(
-      String title, String value, IconData icon, Widget page) {
+  Widget _buildStatCard(String title, String value, IconData icon, Widget page) {
     return GestureDetector(
       onTap: () => _navigateFromSide(context, page),
       child: Row(
@@ -442,15 +392,16 @@ class _ProfileState extends State<Profile> {
           Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(title,
-                  style: const TextStyle(
-                      fontSize: 14, fontWeight: FontWeight.bold)),
-              Text(value,
-                  style: const TextStyle(fontSize: 10, color: Colors.grey)),
+              Text(title, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold)),
+              Text(value, style: const TextStyle(fontSize: 10, color: Colors.grey)),
             ],
           ),
         ],
       ),
     );
+  }
+
+  Widget test() {
+    return Placeholder();
   }
 }

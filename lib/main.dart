@@ -6,6 +6,7 @@ import 'package:orbit/Pages/HomeFeed/HomePageMain.dart';
 import 'package:orbit/service/auth_Service.dart';
 import 'package:provider/provider.dart';
 import 'Auth/Pages/welcomePage.dart';
+import 'Pages/MiscellaneousPage/FollowerList.dart';
 import 'ThemeData/theme_provider.dart';
 
 void main() async {
@@ -29,6 +30,7 @@ class MyApp extends StatelessWidget {
         builder: (context, themeProvider, child) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
+            navigatorObservers: [routeObserver],
             themeMode: themeProvider.themeMode, // Apply the theme mode
             theme: ThemeData.light(),
             darkTheme: ThemeData.dark(),

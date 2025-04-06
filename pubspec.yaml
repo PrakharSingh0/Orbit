@@ -56,6 +56,8 @@ dependencies:
   flutter_animate: ^4.5.2
   crop_your_image: ^2.0.0
   image_editor_plus: ^1.0.6
+  shimmer: ^3.0.0
+  cached_network_image: ^3.4.1
 
 dev_dependencies:
   flutter_test:

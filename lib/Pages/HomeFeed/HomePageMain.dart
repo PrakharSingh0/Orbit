@@ -10,6 +10,7 @@ import 'package:orbit/Pages/HomeFeed/ExplorePage.dart';
 import 'package:orbit/Pages/HomeFeed/FeedPage.dart';
 import 'package:orbit/Pages/HomeFeed/InboxPage.dart';
 import 'package:orbit/Pages/HomeFeed/Profile/ProfilePage.dart';
+import 'package:orbit/Pages/HomeFeed/search/SearchUserPage.dart';
 import 'package:orbit/Pages/MiscellaneousPage/LeftDrawer.dart';
 import 'package:orbit/Pages/MiscellaneousPage/RightDrawer.dart';
 
@@ -23,7 +24,7 @@ class HomePageMain extends StatefulWidget {
 
 class _HomePageMainState extends State<HomePageMain> {
   int _selectedIndex = 0;
-  int unreadMessages = 0;
+  int unreadMessages = 5;
   bool isLoading = true;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
@@ -34,7 +35,7 @@ class _HomePageMainState extends State<HomePageMain> {
     const ExplorePage(),
     const AddPostPage(),
     const InboxPage(),
-    const Profile()
+    const ProfilePage()
   ];
 
   final List<String> appBarTitles = [
@@ -44,6 +45,12 @@ class _HomePageMainState extends State<HomePageMain> {
     "Inbox",
     "Profile"
   ];
+  @override
+  void initState() {
+    super.initState();
+    fetchUser(); // ✅ Call the method to load profile picture
+  }
+
 
 
   void _navigateWithCoolAnimation(BuildContext context, Widget page) {
@@ -118,7 +125,7 @@ class _HomePageMainState extends State<HomePageMain> {
 
   void _onItemTapped(int index) {
     if (index == 4) { // Profile Button Clicked
-      _navigateWithCoolAnimation(context, const Profile()); // ✅ Open with animation
+      _navigateWithCoolAnimation(context, const ProfilePage()); // ✅ Open with animation
     } else {
       setState(() {
         _selectedIndex = index;
@@ -151,7 +158,13 @@ class _HomePageMainState extends State<HomePageMain> {
         shadowColor: Colors.black26,
         titleSpacing: 0,
         actions: [
-          IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.search)),
+          IconButton(
+            icon: const Icon(CupertinoIcons.search),
+            onPressed: () {
+              _navigateWithCoolAnimation(context, const SearchUserPage());
+            },
+          ),
+
           IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.heart_fill)),
           Builder(
             builder: (context) {
@@ -160,28 +173,24 @@ class _HomePageMainState extends State<HomePageMain> {
                   Scaffold.of(context).openEndDrawer();
                 },
                 child: Container(
-                  padding: const EdgeInsets.all(.5), // Outer padding for better spacing
+                  margin: const EdgeInsets.symmetric(horizontal: 2),
+                  padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    color: theme.colorScheme.onSurface,
-                    // gradient: LinearGradient( // Instagram-like subtle gradient
-                    //   colors: [Colors.purpleAccent, Colors.orangeAccent],
-                    //   begin: Alignment.topLeft,
-                    //   end: Alignment.bottomRight,
-                    // ),
-                    border: Border.all(color: theme.colorScheme.onSurface, width: 1), // White border for contrast
+                    border: Border.all(color: Colors.blueAccent.shade400, width: 1.5),
                   ),
                   child: CircleAvatar(
-                    radius: 18, // Adjusted for better balance
-                    backgroundColor: Colors.grey[300], // Placeholder color
+                    radius: 18,
+                    // backgroundColor: Colors.grey[200],
                     backgroundImage: profilePicturUrl.isNotEmpty
                         ? NetworkImage(profilePicturUrl)
-                        : const AssetImage("assets/avatar.jpg") as ImageProvider,
+                        : const AssetImage("assets/avatar_placeholder.png") as ImageProvider,
                   ),
                 ),
               );
             },
           ),
+
 
           const SizedBox(width: 10),
         ],
@@ -210,17 +219,17 @@ class _HomePageMainState extends State<HomePageMain> {
         destinations: [
           const NavigationDestination(
             icon: Icon(Icons.home_outlined, size: 22),
-            selectedIcon: Icon(Icons.home, color: Colors.blueGrey, size: 24),
+            selectedIcon: Icon(Icons.home, color: Colors.blueAccent, size: 24),
             label: "Home",
           ),
           const NavigationDestination(
             icon: Icon(Bootstrap.globe2, size: 22),
-            selectedIcon: Icon(Bootstrap.globe, color: Colors.blueGrey, size: 24),
+            selectedIcon: Icon(Bootstrap.globe, color: Colors.blueAccent, size: 24),
             label: "Explore",
           ),
           const NavigationDestination(
             icon: Icon(CupertinoIcons.add_circled, size: 26),
-            selectedIcon: Icon(CupertinoIcons.add_circled_solid, color: Colors.blueGrey, size: 28),
+            selectedIcon: Icon(CupertinoIcons.add_circled_solid, color: Colors.blueAccent, size: 28),
             label: "Post",
           ),
           NavigationDestination(
@@ -266,7 +275,7 @@ class _HomePageMainState extends State<HomePageMain> {
           ),
           const NavigationDestination(
             icon: Icon(LineAwesome.user_astronaut_solid, size: 22),
-            selectedIcon: Icon(FontAwesome.user, color: Colors.blueGrey, size: 24),
+            selectedIcon: Icon(FontAwesome.user, color: Colors.blueAccent, size: 24),
             label: "Profile",
           ),
         ],
