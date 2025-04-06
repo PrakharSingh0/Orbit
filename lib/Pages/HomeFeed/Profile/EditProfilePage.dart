@@ -8,6 +8,10 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:intl/intl.dart';
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+
+// ... [keep existing imports]
+import 'package:flutter/services.dart';
 
 class EditProfilePage extends StatefulWidget {
   const EditProfilePage({super.key});
@@ -22,16 +26,20 @@ class _EditProfilePageState extends State<EditProfilePage> {
   final TextEditingController bioController = TextEditingController();
   final TextEditingController jobController = TextEditingController();
   final TextEditingController locationController = TextEditingController();
-
   final FocusNode usernameFocus = FocusNode();
 
   DateTime? selectedDOB;
   String selectedGender = "Male";
   File? _profileImage;
+  String? profileImageUrl;
+  File? _bannerImage;
+  String? bannerImageUrl;
+
   bool isLoading = true;
   bool isUsernameUnique = true;
   bool isCheckingUsername = false;
   String? originalTag;
+  bool isUploading = false;
 
   final picker = ImagePicker();
   final user = FirebaseAuth.instance.currentUser;
@@ -94,6 +102,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         locationController.text = data['location'] ?? '';
         selectedGender = data['gender'] ?? 'Prefer not to say';
         isLoading = false;
+        profileImageUrl = data['profilePictureUrl'];
+        bannerImageUrl = data['bannerImageUrl'];
       });
     }
   }
@@ -119,6 +129,13 @@ class _EditProfilePageState extends State<EditProfilePage> {
     }
   }
 
+  Future<void> _pickBannerImage() async {
+    final picked = await picker.pickImage(source: ImageSource.gallery);
+    if (picked != null) {
+      setState(() => _bannerImage = File(picked.path));
+    }
+  }
+
   Future<void> _pickDOB() async {
     final picked = await showDatePicker(
       context: context,
@@ -134,15 +151,28 @@ class _EditProfilePageState extends State<EditProfilePage> {
   Future<void> _saveProfile() async {
     if (user == null || !isUsernameUnique) return;
 
+    setState(() => isUploading = true);
+    _showUploadingDialog();
+
     String? uploadedImageUrl;
+    String? uploadedBannerUrl;
+
     if (_profileImage != null) {
       uploadedImageUrl = await _uploadToCloudinary(_profileImage!);
-      if (uploadedImageUrl == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Failed to upload profile image")),
-        );
-        return;
-      }
+    }
+
+    if (_bannerImage != null) {
+      uploadedBannerUrl = await _uploadToCloudinary(_bannerImage!);
+    }
+
+    if ((uploadedImageUrl == null && _profileImage != null) ||
+        (uploadedBannerUrl == null && _bannerImage != null)) {
+      _hideUploadingDialog();
+      setState(() => isUploading = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Failed to upload image(s)")),
+      );
+      return;
     }
 
     final trimmedTag = usernameController.text.trim().toLowerCase();
@@ -160,6 +190,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
       updatedData["profilePictureUrl"] = uploadedImageUrl;
     }
 
+    if (uploadedBannerUrl != null) {
+      updatedData["bannerImageUrl"] = uploadedBannerUrl;
+    }
+
     try {
       await firestore.collection("users").doc(user!.uid).update(updatedData);
       await firestore.collection("userTags").doc(trimmedTag).set({'uid': user!.uid});
@@ -168,6 +202,9 @@ class _EditProfilePageState extends State<EditProfilePage> {
         await firestore.collection("userTags").doc(originalTag!.toLowerCase()).delete();
       }
 
+      _hideUploadingDialog();
+      setState(() => isUploading = false);
+
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text("Profile updated successfully")),
@@ -175,6 +212,8 @@ class _EditProfilePageState extends State<EditProfilePage> {
         Navigator.pop(context, true);
       }
     } catch (e) {
+      _hideUploadingDialog();
+      setState(() => isUploading = false);
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Error updating profile: $e")),
@@ -185,33 +224,55 @@ class _EditProfilePageState extends State<EditProfilePage> {
 
   Future<String?> _uploadToCloudinary(File file) async {
     try {
-      final compressed = await FlutterImageCompress.compressWithFile(
+      final compressedBytes = await FlutterImageCompress.compressWithFile(
         file.absolute.path,
-        minWidth: 400,
-        minHeight: 400,
+        minWidth: 300,
+        minHeight: 300,
         quality: 50,
+        format: CompressFormat.webp,
       );
 
-      if (compressed == null) return null;
+      if (compressedBytes == null) return null;
 
       final uri = Uri.parse('https://api.cloudinary.com/v1_1/orbit-01/image/upload');
       final request = http.MultipartRequest('POST', uri)
         ..fields['upload_preset'] = 'orbit-upload Preset'
-        ..files.add(http.MultipartFile.fromBytes('file', compressed, filename: 'profile.jpg'));
+        ..files.add(
+          http.MultipartFile.fromBytes(
+            'file',
+            compressedBytes,
+            filename: 'upload.webp',
+            contentType: MediaType('image', 'webp'),
+          ),
+        );
 
-      final res = await request.send();
+      final response = await request.send();
 
-      if (res.statusCode == 200) {
-        final resBody = await res.stream.bytesToString();
-        final json = jsonDecode(resBody);
+      if (response.statusCode == 200) {
+        final responseBody = await response.stream.bytesToString();
+        final json = jsonDecode(responseBody);
         return json['secure_url'];
       } else {
-        print('Upload failed: ${res.statusCode}');
+        print('Upload failed: ${response.statusCode}');
         return null;
       }
     } catch (e) {
-      print("Upload error: $e");
+      print('Upload error: $e');
       return null;
+    }
+  }
+
+  void _showUploadingDialog() {
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) => const Center(child: CircularProgressIndicator()),
+    );
+  }
+
+  void _hideUploadingDialog() {
+    if (Navigator.of(context).canPop()) {
+      Navigator.of(context).pop();
     }
   }
 
@@ -234,34 +295,126 @@ class _EditProfilePageState extends State<EditProfilePage> {
           : ListView(
         padding: const EdgeInsets.all(20),
         children: [
-          Center(
-            child: Stack(
-              alignment: Alignment.bottomRight,
-              children: [
-                CircleAvatar(
-                  radius: 60,
-                  backgroundImage: _profileImage != null
-                      ? FileImage(_profileImage!)
-                      : const AssetImage("assets/avatar.jpg") as ImageProvider,
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              // 🔷 Banner Image with Edit Icon
+              Container(
+                height: 180,
+                width: double.infinity,
+                decoration: BoxDecoration(
+                  borderRadius: BorderRadius.circular(16),
+                  image: (_bannerImage != null || bannerImageUrl != null)
+                      ? DecorationImage(
+                    image: _bannerImage != null
+                        ? FileImage(_bannerImage!)
+                        : NetworkImage(bannerImageUrl!) as ImageProvider,
+                    fit: BoxFit.cover,
+                  )
+                      : null,
+                  color: Colors.grey[300],
                 ),
-                GestureDetector(
-                  onTap: _pickImage,
+                child: (_bannerImage == null && bannerImageUrl == null)
+                    ? const Center(
+                  child: Icon(Icons.photo_library_outlined, size: 36, color: Colors.black45),
+                )
+                    : Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(16),
+                    gradient: LinearGradient(
+                      colors: [Colors.black.withOpacity(0.25), Colors.transparent],
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                    ),
+                  ),
+                ),
+              ),
+
+              // 🔧 Banner Edit Icon
+              Positioned(
+                top: 12,
+                right: 12,
+                child: GestureDetector(
+                  onTap: _pickBannerImage,
                   child: Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: theme.colorScheme.primary,
+                      color: Colors.white,
                       shape: BoxShape.circle,
                       boxShadow: [
-                        BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 4),
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 4,
+                          offset: Offset(0, 2),
+                        ),
                       ],
                     ),
-                    child: Icon(Icons.edit, size: 18, color: theme.colorScheme.onPrimary),
+                    child: Icon(Icons.edit, size: 18, color: Theme.of(context).primaryColor),
                   ),
                 ),
-              ],
-            ),
+              ),
+
+              // 🧑 Profile Avatar - Centered
+              Positioned(
+                bottom: -35,
+                right: 6,
+                child: Align(
+                  alignment: Alignment.center,
+                  child: GestureDetector(onTap: _pickImage,
+                    child: Stack(
+                      alignment: Alignment.bottomRight,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: Colors.white,
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.2),
+                                blurRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: CircleAvatar(
+                            radius: 60,
+                            backgroundImage: _profileImage != null
+                                ? FileImage(_profileImage!)
+                                : (profileImageUrl != null
+                                ? NetworkImage(profileImageUrl!)
+                                : const AssetImage("assets/avatar.jpg")) as ImageProvider,
+                          ),
+                        ),
+                        Positioned(
+                          bottom: 6,
+                          right: 6,
+                          child: GestureDetector(
+                            onTap: _pickImage,
+                            child: Container(
+                              padding: const EdgeInsets.all(6),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                                boxShadow: [
+                                  BoxShadow(color: Colors.black26, blurRadius: 4),
+                                ],
+                              ),
+                              child: Icon(Icons.edit, size: 18, color: Theme.of(context).primaryColor),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 30),
+//
+// // 🔻 Space to push content below avatar
+//           const SizedBox(height: 30),
+
+          const SizedBox(height: 50),
           _buildField(context, controller: nameController, label: "Full Name", icon: Icons.person_outline),
           _buildUserTagField(context),
           _buildField(context, controller: bioController, label: "Bio", icon: Icons.info_outline, maxLines: 3),
@@ -281,6 +434,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
       ),
     );
   }
+
 
   Widget _buildField(BuildContext context,
       {required TextEditingController controller, required String label, required IconData icon, int maxLines = 1}) {

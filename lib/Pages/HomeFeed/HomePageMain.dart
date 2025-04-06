@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -22,6 +24,11 @@ class HomePageMain extends StatefulWidget {
 class _HomePageMainState extends State<HomePageMain> {
   int _selectedIndex = 0;
   int unreadMessages = 0;
+  bool isLoading = true;
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final User? user = FirebaseAuth.instance.currentUser;
+
+  String profilePicturUrl="";
   final List<Widget> pages = [
     const FeedPage(),
     const ExplorePage(),
@@ -87,6 +94,24 @@ class _HomePageMainState extends State<HomePageMain> {
     );
   }
 
+  Future<void> fetchUser() async {
+    if (user == null) return;
+
+    DocumentSnapshot userDoc =
+    await _firestore.collection("users").doc(user!.uid).get();
+
+    if (userDoc.exists) {
+      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+      setState(() {
+        profilePicturUrl = userData['profilePictureUrl'] ?? ''; // ✅ fixed
+      });
+
+
+    } else {
+      debugPrint("User document does not exist.");
+    }
+  }
 
 
 
@@ -149,7 +174,9 @@ class _HomePageMainState extends State<HomePageMain> {
                   child: CircleAvatar(
                     radius: 18, // Adjusted for better balance
                     backgroundColor: Colors.grey[300], // Placeholder color
-                    backgroundImage: const AssetImage("assets/avatar.jpg"),
+                    backgroundImage: profilePicturUrl.isNotEmpty
+                        ? NetworkImage(profilePicturUrl)
+                        : const AssetImage("assets/avatar.jpg") as ImageProvider,
                   ),
                 ),
               );

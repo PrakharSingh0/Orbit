@@ -132,7 +132,7 @@ class _RightDrawerState extends State<RightDrawer> {
                               backgroundImage: profilePic.isNotEmpty
                                   ? NetworkImage(profilePic)
                                   : const AssetImage("assets/avatar.jpg") as ImageProvider,
-                              radius: 45,
+                              radius: 35,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
