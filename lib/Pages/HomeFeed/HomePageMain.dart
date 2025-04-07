@@ -35,7 +35,7 @@ class _HomePageMainState extends State<HomePageMain> {
     const ExplorePage(),
     const AddPostPage(),
     const InboxPage(),
-    const ProfilePage()
+    const ProfilePage(userId: '',)
   ];
 
   final List<String> appBarTitles = [
@@ -125,7 +125,7 @@ class _HomePageMainState extends State<HomePageMain> {
 
   void _onItemTapped(int index) {
     if (index == 4) { // Profile Button Clicked
-      _navigateWithCoolAnimation(context, const ProfilePage()); // ✅ Open with animation
+      _navigateWithCoolAnimation(context, ProfilePage(userId: user?.uid,)); // ✅ Open with animation
     } else {
       setState(() {
         _selectedIndex = index;

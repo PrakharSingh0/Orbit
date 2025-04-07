@@ -30,7 +30,7 @@ class MyApp extends StatelessWidget {
         builder: (context, themeProvider, child) {
           return MaterialApp(
             debugShowCheckedModeBanner: false,
-            navigatorObservers: [routeObserver],
+            // navigatorObservers: [routeObserver],
             themeMode: themeProvider.themeMode, // Apply the theme mode
             theme: ThemeData.light(),
             darkTheme: ThemeData.dark(),

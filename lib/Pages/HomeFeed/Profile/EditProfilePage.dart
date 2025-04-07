@@ -304,17 +304,18 @@ class _EditProfilePageState extends State<EditProfilePage> {
                 width: double.infinity,
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
-                  image: (_bannerImage != null || bannerImageUrl != null)
-                      ? DecorationImage(
+                  image: DecorationImage(
                     image: _bannerImage != null
                         ? FileImage(_bannerImage!)
-                        : NetworkImage(bannerImageUrl!) as ImageProvider,
+                        : (bannerImageUrl != null && bannerImageUrl!.isNotEmpty)
+                        ? NetworkImage(bannerImageUrl!) as ImageProvider
+                        : const AssetImage('assets/background_placeholder.png'),
                     fit: BoxFit.cover,
-                  )
-                      : null,
+                  ),
                   color: Colors.grey[300],
                 ),
-                child: (_bannerImage == null && bannerImageUrl == null)
+
+          child: (_bannerImage == null && bannerImageUrl == null)
                     ? const Center(
                   child: Icon(Icons.photo_library_outlined, size: 36, color: Colors.black45),
                 )
@@ -382,7 +383,7 @@ class _EditProfilePageState extends State<EditProfilePage> {
                                 ? FileImage(_profileImage!)
                                 : (profileImageUrl != null
                                 ? NetworkImage(profileImageUrl!)
-                                : const AssetImage("assets/avatar.jpg")) as ImageProvider,
+                                : const AssetImage("assets/avatar_placeholder.png")) as ImageProvider,
                           ),
                         ),
                         Positioned(

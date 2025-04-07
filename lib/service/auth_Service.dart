@@ -51,8 +51,6 @@ class AuthService {
     await _firestore.collection('users').doc(uid).set({
       "createdAt" : createdAt,
       "email": email,
-      "follower":0,
-      "following":0,
       "onlineStatus":true,
       'userName': userName,
       'userTag': userTag,

@@ -1,10 +1,11 @@
 import 'dart:async';
-
+import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
-import 'package:orbit/Pages/HomeFeed/HomePageMain.dart';
+import '../../Models/cityStateMode.dart';
+import '../../Pages/HomeFeed/HomePageMain.dart';
 
 class ProfileSetupScreen extends StatefulWidget {
   const ProfileSetupScreen({super.key});
@@ -32,6 +33,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   final _genderController = TextEditingController();
   final _professionController = TextEditingController();
 
+  String? _selectedState;
+  String? _selectedDistrict;
   bool _isLoading = false;
   String? _userTagError;
   Timer? _debounce;
@@ -93,9 +96,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       final formattedTag = rawInput.replaceAll(' ', '-').toLowerCase();
 
       if (formattedTag.isEmpty || formattedTag.length < 3) {
-        if (mounted) {
-          setState(() => _userTagError = null);
-        }
+        if (mounted) setState(() => _userTagError = null);
         return;
       }
 
@@ -153,10 +154,12 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
       if (!mounted) return;
 
-      Navigator.pushReplacement(
+      Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const HomePageMain()),
+        MaterialPageRoute(builder: (context) => const HomePageMain()),
+            (Route<dynamic> route) => false,
       );
+
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text("Something went wrong: ${e.toString()}")),
@@ -173,126 +176,130 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
 
     return Scaffold(
       backgroundColor: isDark ? Colors.black : Colors.white,
-      body: Stack(
-        children: [
-          SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              children: [
-                const SizedBox(height: 80),
-                Text(
-                  "Complete Your Profile",
-                  style: TextStyle(
-                    fontSize: size.width * 0.08,
-                    fontWeight: FontWeight.bold,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ).animate().fade().slideY(),
-
-                const SizedBox(height: 10),
-                Text(
-                  "Let’s get to know you",
-                  style: TextStyle(
-                    fontSize: size.width * 0.04,
-                    color: isDark ? Colors.grey[400] : Colors.grey[700],
-                  ),
-                ).animate().fade(duration: 700.ms),
-
-                const SizedBox(height: 40),
-
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      _buildTextField(
-                        controller: _userNameController,
-                        label: "Full Name",
-                        icon: Icons.person_outline,
-                        isDark: isDark,
-                        validator: (v) => v!.isEmpty ? "Enter your name" : null,
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildTextField(
-                        controller: _userTagController,
-                        label: "Username",
-                        icon: Icons.alternate_email,
-                        isDark: isDark,
-                        errorText: _userTagError,
-                        validator: (v) {
-                          if (v!.isEmpty) return "Enter a username";
-                          if (v.length < 3) return "Minimum 3 characters";
-                          return _userTagError;
-                        },
-                        suffixIcon: _userTagController.text.trim().length >= 3
-                            ? _userTagError == null
-                            ? const Icon(Icons.check_circle, color: Colors.green)
-                            : const Icon(Icons.cancel, color: Colors.red)
-                            : null,
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildTextField(
-                        controller: _dobController,
-                        label: "Date of Birth",
-                        icon: Icons.cake_outlined,
-                        isDark: isDark,
-                        readOnly: true,
-                        onTap: _selectDate,
-                        validator: (v) => v!.isEmpty ? "Select your DOB" : null,
-                      ),
-                      const SizedBox(height: 20),
-
-                      Align(
-                        alignment: Alignment.centerLeft,
-                        child: Padding(
-                          padding: const EdgeInsets.only(left: 4, bottom: 8),
-                          child: Text(
-                            "Gender",
+      body: SafeArea(
+        child: Stack(
+          children: [
+            LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                    child: IntrinsicHeight(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          const SizedBox(height: 30),
+                          Text(
+                            "Complete Your Profile",
                             style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w500,
-                              color: isDark ? Colors.white70 : Colors.black87,
+                              fontSize: size.width * 0.08,
+                              fontWeight: FontWeight.bold,
+                              color: isDark ? Colors.white : Colors.black,
+                            ),
+                          ).animate().fade().slideY(),
+
+                          const SizedBox(height: 10),
+                          Text(
+                            "Let’s get to know you",
+                            style: TextStyle(
+                              fontSize: size.width * 0.045,
+                              color: isDark ? Colors.grey[400] : Colors.grey[700],
+                            ),
+                          ).animate().fade(duration: 700.ms),
+
+                          const SizedBox(height: 30),
+                          Form(
+                            key: _formKey,
+                            child: Column(
+                              children: [
+                                _buildTextField(
+                                  controller: _userNameController,
+                                  label: "Full Name",
+                                  icon: Icons.person_outline,
+                                  isDark: isDark,
+                                  validator: (v) => v!.isEmpty ? "Enter your name" : null,
+                                ),
+                                const SizedBox(height: 20),
+
+                                _buildTextField(
+                                  controller: _userTagController,
+                                  label: "Username",
+                                  icon: Icons.alternate_email,
+                                  isDark: isDark,
+                                  errorText: _userTagError,
+                                  validator: (v) {
+                                    if (v!.isEmpty) return "Enter a username";
+                                    if (v.length < 3) return "Minimum 3 characters";
+                                    return _userTagError;
+                                  },
+                                  suffixIcon: _userTagController.text.trim().length >= 3
+                                      ? _userTagError == null
+                                      ? const Icon(Icons.check_circle, color: Colors.green)
+                                      : const Icon(Icons.cancel, color: Colors.red)
+                                      : null,
+                                ),
+                                const SizedBox(height: 20),
+
+                                _buildTextField(
+                                  controller: _dobController,
+                                  label: "Date of Birth",
+                                  icon: Icons.cake_outlined,
+                                  isDark: isDark,
+                                  readOnly: true,
+                                  onTap: _selectDate,
+                                  validator: (v) => v!.isEmpty ? "Select your DOB" : null,
+                                ),
+                                const SizedBox(height: 20),
+
+                                Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 4, bottom: 8),
+                                    child: Text(
+                                      "Gender",
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                        color: isDark ? Colors.white70 : Colors.black87,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                                _genderSelector(isDark),
+                                const SizedBox(height: 20),
+
+                                _buildTextField(
+                                  controller: _professionController,
+                                  label: "Job / Profession",
+                                  icon: Icons.work_outline,
+                                  isDark: isDark,
+                                  validator: (v) => v!.isEmpty ? "Enter your profession" : null,
+                                ),
+                                const SizedBox(height: 20),
+
+                                _buildLocationSelector(isDark),
+                                const SizedBox(height: 30),
+
+                                _buildButton("Save Profile", _completeProfile, isDark),
+                                const SizedBox(height: 30),
+                              ],
                             ),
                           ),
-                        ),
+                        ],
                       ),
-                      _genderSelector(isDark),
-                      const SizedBox(height: 20),
-
-                      _buildTextField(
-                        controller: _professionController,
-                        label: "Job / Profession",
-                        icon: Icons.work_outline,
-                        isDark: isDark,
-                        validator: (v) => v!.isEmpty ? "Enter your profession" : null,
-                      ),
-                      const SizedBox(height: 20),
-
-                      _buildTextField(
-                        controller: _locationController,
-                        label: "Location (City, State)",
-                        icon: Icons.location_on_outlined,
-                        isDark: isDark,
-                        validator: (v) => v!.isEmpty ? "Enter your location" : null,
-                      ),
-                      const SizedBox(height: 30),
-
-                      _buildButton("Complete Profile", _completeProfile, isDark),
-                      const SizedBox(height: 50),
-                    ],
+                    ),
                   ),
-                ),
-              ],
+                );
+              },
             ),
-          ),
-
-          if (_isLoading)
-            Container(
-              color: Colors.black.withOpacity(0.3),
-              child: const Center(child: CircularProgressIndicator()),
-            ),
-        ],
+            if (_isLoading)
+              Container(
+                color: Colors.black.withOpacity(0.3),
+                child: const Center(child: CircularProgressIndicator()),
+              ),
+          ],
+        ),
       ),
     );
   }
@@ -360,16 +367,20 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
       {'label': 'Other', 'icon': Icons.transgender},
     ];
 
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+    final width = MediaQuery.of(context).size.width;
+    final itemWidth = (width - 72) / 3;
+
+    return Wrap(
+      spacing: 12,
+      runSpacing: 12,
       children: genders.map((gender) {
         final label = gender['label'] as String;
         final isSelected = _genderController.text == label;
 
-        return Expanded(
+        return SizedBox(
+          width: itemWidth,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 250),
-            margin: const EdgeInsets.symmetric(horizontal: 6),
             decoration: BoxDecoration(
               color: isSelected
                   ? (isDark ? Colors.white : Colors.black)
@@ -396,7 +407,7 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
               borderRadius: BorderRadius.circular(30),
               onTap: () => setState(() => _genderController.text = label),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 12),
+                padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -425,6 +436,61 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           ),
         );
       }).toList(),
+    );
+  }
+
+  Widget _buildLocationSelector(bool isDark) {
+    List<String> states = stateDistrictData.map((e) => e['state'] as String).toList();
+    List<String> districts = _selectedState == null
+        ? []
+        : stateDistrictData.firstWhere((e) => e['state'] == _selectedState)['districts'];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const SizedBox(height: 8),
+        DropdownButtonFormField<String>(
+          value: _selectedState,
+          items: states.map((state) {
+            return DropdownMenuItem(value: state, child: Text(state));
+          }).toList(),
+          decoration: InputDecoration(
+            labelText: 'State',
+            prefixIcon: const Icon(Icons.map_outlined),
+            filled: true,
+            fillColor: isDark ? Colors.white12 : Colors.grey[100],
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          onChanged: (value) {
+            setState(() {
+              _selectedState = value;
+              _selectedDistrict = null;
+            });
+          },
+          validator: (value) => value == null ? 'Select your state' : null,
+        ),
+        const SizedBox(height: 20),
+        DropdownButtonFormField<String>(
+          value: _selectedDistrict,
+          items: districts.map((district) {
+            return DropdownMenuItem(value: district, child: Text(district));
+          }).toList(),
+          onChanged: (value) {
+            setState(() {
+              _selectedDistrict = value;
+              _locationController.text = "$value, $_selectedState";
+            });
+          },
+          decoration: InputDecoration(
+            labelText: "District",
+            prefixIcon: const Icon(Icons.location_city_outlined),
+            filled: true,
+            fillColor: isDark ? Colors.white12 : Colors.grey[100],
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+          validator: (value) => value == null || value.isEmpty ? 'Select your district' : null,
+        ),
+      ],
     );
   }
 }

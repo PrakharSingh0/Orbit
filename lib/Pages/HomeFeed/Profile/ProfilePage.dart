@@ -3,14 +3,15 @@ import 'package:icons_plus/icons_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
-
+import 'package:shimmer/shimmer.dart';
 import '../../MiscellaneousPage/FollowerList.dart';
 import 'EditProfilePage.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+
 
 class ProfilePage extends StatefulWidget {
   final String? userId;
-
-  const ProfilePage({super.key, this.userId});
+  const ProfilePage({super.key,required this.userId,});
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -18,7 +19,6 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   bool isExpanded = false;
-
 
   String userName = 'Loading...';
   String userTag = '';
@@ -37,6 +37,11 @@ class _ProfilePageState extends State<ProfilePage> {
   bool isOwnProfile = true;
   bool isFollowing = false;
 
+
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final User? user = FirebaseAuth.instance.currentUser;
+  final String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
+
   @override
   void initState() {
     super.initState();
@@ -51,12 +56,10 @@ class _ProfilePageState extends State<ProfilePage> {
     try {
       final uid = widget.userId ?? currentUserId;
       if (uid != null) {
-        final doc =
-        await FirebaseFirestore.instance.collection('users').doc(uid).get();
+        final doc = await _firestore.collection('users').doc(uid).get();
         if (doc.exists) {
           final data = doc.data()!;
-          Timestamp? createdAt =
-          data['createdAt'] is Timestamp ? data['createdAt'] : null;
+          Timestamp? createdAt = data['createdAt'] is Timestamp ? data['createdAt'] : null;
 
           final rawDob = data['dob'];
           String formattedDob = 'Not set';
@@ -70,6 +73,21 @@ class _ProfilePageState extends State<ProfilePage> {
               formattedDob = rawDob;
             }
           }
+
+          // Count follower and following documents
+          final followerCount = await _firestore
+              .collection('users')
+              .doc(uid)
+              .collection('followers')
+              .get()
+              .then((snap) => snap.docs.length);
+
+          final followingCount = await _firestore
+              .collection('users')
+              .doc(uid)
+              .collection('following')
+              .get()
+              .then((snap) => snap.docs.length);
 
           setState(() {
             userName = data['userName'] ?? 'No name';
@@ -88,8 +106,8 @@ class _ProfilePageState extends State<ProfilePage> {
                 : 'Not set';
             profilePic = data['profilePictureUrl'] ?? '';
             profileBanner = data['bannerImageUrl'] ?? '';
-            follower = data['follower'] ?? 0;
-            following = data['following'] ?? 0;
+            follower = followerCount;
+            following = followingCount;
           });
         }
       }
@@ -99,6 +117,7 @@ class _ProfilePageState extends State<ProfilePage> {
       setState(() => isLoading = false);
     }
   }
+
 
   Future<void> checkFollowingStatus() async {
     final currentUid = currentUserId;
@@ -239,13 +258,14 @@ class _ProfilePageState extends State<ProfilePage> {
                     decoration: BoxDecoration(
                       borderRadius: const BorderRadius.only(bottomRight: Radius.circular(25)),
                       image: DecorationImage(
-                        image: profileBanner.isNotEmpty
-                            ? NetworkImage(profileBanner)
-                            : const AssetImage("assets/back.jpg") as ImageProvider,
+                        image: (profileBanner.isNotEmpty)
+                            ? CachedNetworkImageProvider(profileBanner)
+                            : const AssetImage("assets/background_placeholder.png") as ImageProvider,
                         fit: BoxFit.cover,
                       ),
                     ),
                   ),
+
                   Positioned.fill(
                     child: Container(
                       decoration: BoxDecoration(
@@ -273,11 +293,32 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       child: CircleAvatar(
-                        backgroundImage: profilePic.isNotEmpty
-                            ? NetworkImage(profilePic)
-                            : const AssetImage("assets/avatar_placeholder.png") as ImageProvider,
                         radius: 56,
-                      ),
+                        backgroundColor: Colors.grey.shade200,
+                        child: ClipOval(
+                          child: CachedNetworkImage(
+                            imageUrl: profilePic,
+                            width: 112,
+                            height: 112,
+                            fit: BoxFit.cover,
+                            placeholder: (context, url) => Shimmer.fromColors(
+                              baseColor: Colors.grey.shade300,
+                              highlightColor: Colors.grey.shade100,
+                              child: Container(
+                                width: 112,
+                                height: 112,
+                                color: Colors.white,
+                              ),
+                            ),
+                            errorWidget: (context, url, error) => Image.asset(
+                              'assets/avatar_placeholder.png',
+                              width: 112,
+                              height: 112,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      )
                     ),
                   ),
                 ],
@@ -316,20 +357,20 @@ class _ProfilePageState extends State<ProfilePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatCard("Posts", following.toString(), Icons.grid_view_rounded, test()),
+                        _buildStatCard("Posts", "0", Icons.grid_view_rounded, test()),
                         const SizedBox(width: 20),
                         _buildStatCard(
                           "Follower",
                           follower.toString(),
                           Icons.person_add_alt_1_rounded,
-                          FollowListPage( userId: widget.userId ?? currentUserId!,initialPageIndex: 0, currentUserId: widget.userId ?? currentUserId!,),
+                          FollowListPage( userId: widget.userId ?? currentUserId!,initialPageIndex: 0, currentUserId: currentUserUid,),
                         ),
                         const SizedBox(width: 20),
                         _buildStatCard(
                           "Following",
                           following.toString(),
                           Icons.person_rounded,
-                          FollowListPage( userId: widget.userId ?? currentUserId!,initialPageIndex: 1, currentUserId: widget.userId ?? currentUserId!,),
+                          FollowListPage( userId: widget.userId ?? currentUserId!,initialPageIndex: 1, currentUserId: currentUserUid),
                         ),
                       ],
                     ),

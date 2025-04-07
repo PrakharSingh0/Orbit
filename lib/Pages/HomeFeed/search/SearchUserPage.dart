@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import '../../MiscellaneousPage/threadBuilder.dart';
@@ -15,6 +16,10 @@ class SearchUserPage extends StatefulWidget {
 class _SearchUserPageState extends State<SearchUserPage> {
   final TextEditingController _searchController = TextEditingController();
   List<DocumentSnapshot> results = [];
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final User? user = FirebaseAuth.instance.currentUser;
+  final String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
+
 
   void searchUsers(String query) async {
     if (query.trim().isEmpty) return;
@@ -61,15 +66,19 @@ class _SearchUserPageState extends State<SearchUserPage> {
                   final user = results[index].data() as Map<String, dynamic>;
                   return ListTile(
                     leading: CircleAvatar(
-                      backgroundImage: NetworkImage(user['profilePictureUrl'] ?? ""),
+                      radius: 30, // or any size you want
+                      backgroundImage: (user['profilePictureUrl'] != null && user['profilePictureUrl'].toString().isNotEmpty)
+                          ? NetworkImage(user['profilePictureUrl'])
+                          : const AssetImage('assets/avatar_placeholder.png') as ImageProvider,
                     ),
+
                     title: Text(user['userName'] ?? ''),
                     subtitle: Text("@${user['userTag']}"),
                     onTap: () {
                       Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ProfilePage(userId: results[index].id),
+                          builder: (_) => ProfilePage(userId: results[index].id,),
                         ),
                       );
                     },

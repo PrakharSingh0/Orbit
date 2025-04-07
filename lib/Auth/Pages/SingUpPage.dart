@@ -17,8 +17,14 @@ class _SignUpScreenState extends State<SignUpScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _confirmPasswordController = TextEditingController();
+
   bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+
+  final _passwordRegex =
+      r'^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$';
 
   Future<void> _signUp() async {
     if (!_formKey.currentState!.validate()) return;
@@ -37,7 +43,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         await user.sendEmailVerification();
         _showEmailVerificationDialog(user);
 
-        // Schedule auto-delete
         Future.delayed(const Duration(minutes: 10), () async {
           await user.reload();
           if (!user.emailVerified) {
@@ -176,7 +181,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       const SizedBox(height: 10),
                       ElevatedButton(
                         onPressed: () async {
-                          // Save user info before moving
                           await FirebaseFirestore.instance
                               .collection("users")
                               .doc(user.uid)
@@ -187,7 +191,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                           });
 
                           if (context.mounted) {
-                            Navigator.pop(context); // Close dialog
+                            Navigator.pop(context);
                             Navigator.pushReplacement(
                               context,
                               MaterialPageRoute(
@@ -220,12 +224,11 @@ class _SignUpScreenState extends State<SignUpScreen> {
     return Scaffold(
       backgroundColor: Colors.black,
       body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 20),
+        padding: EdgeInsets.symmetric(horizontal: screenSize.width * 0.05),
         child: Center(
           child: SingleChildScrollView(
             child: Column(
               children: [
-                const SizedBox(height: 10),
                 Text(
                   "Create Account",
                   style: TextStyle(
@@ -282,7 +285,33 @@ class _SignUpScreenState extends State<SignUpScreen> {
                         ),
                         validator: (value) {
                           if (value == null || value.isEmpty) return "Enter your password";
-                          if (value.length < 6) return "Password must be at least 6 characters";
+                          if (!RegExp(_passwordRegex).hasMatch(value)) {
+                            return "Password must be 8+ characters, include upper, lower, digit & special char.";
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 15),
+                      _buildTextField(
+                        controller: _confirmPasswordController,
+                        label: "Confirm Password",
+                        icon: Icons.lock_outline,
+                        obscureText: _obscureConfirmPassword,
+                        isDark: isDark,
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                            color: isDark ? Colors.grey.shade300 : Colors.grey.shade600,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscureConfirmPassword = !_obscureConfirmPassword;
+                            });
+                          },
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return "Re-enter your password";
+                          if (value != _passwordController.text) return "Passwords do not match";
                           return null;
                         },
                       ),
@@ -305,7 +334,7 @@ class _SignUpScreenState extends State<SignUpScreen> {
                       onPressed: () {
                         Navigator.pushReplacement(
                           context,
-                          MaterialPageRoute(builder: (context) =>  const LoginScreen()),
+                          MaterialPageRoute(builder: (context) => const LoginScreen()),
                         );
                       },
                       child: Text(
@@ -331,7 +360,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
     required String label,
     required IconData icon,
     required bool isDark,
-    String? errorText,
     TextInputType keyboardType = TextInputType.text,
     bool obscureText = false,
     Widget? suffixIcon,
@@ -348,7 +376,6 @@ class _SignUpScreenState extends State<SignUpScreen> {
         prefixIcon: Icon(icon, color: isDark ? Colors.white70 : Colors.black87),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-        errorText: errorText,
       ),
       validator: validator,
     );

@@ -8,7 +8,8 @@ import 'package:orbit/Pages/MiscellaneousPage/Premium.dart';
 import 'package:orbit/Pages/MiscellaneousPage/UserHistory.dart';
 import 'package:orbit/Pages/MiscellaneousPage/UserSavedPost.dart';
 import 'package:orbit/Pages/MiscellaneousPage/SettingsPage/Settings.dart';
-
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:shimmer/shimmer.dart';
 
 class RightDrawer extends StatefulWidget {
   final String? userId;
@@ -22,8 +23,8 @@ class _RightDrawerState extends State<RightDrawer> {
   bool _isOnline = true;
   String username = "";
   String userid = "";
-  String follower = "0";
-  String following = "0";
+  int follower=0;
+  int following=0;
   String profilePic = "";
   String userUid = "";
   String? currentUserId;
@@ -44,12 +45,26 @@ class _RightDrawerState extends State<RightDrawer> {
   /// Fetch user data from Firestore
   Future<void> fetchUser() async {
     if (user == null) return;
-
+    final uid = widget.userId ?? currentUserId;
     DocumentSnapshot userDoc =
     await _firestore.collection("users").doc(user!.uid).get();
 
     if (userDoc.exists) {
       Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
+
+      final followerCount = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('followers')
+          .get()
+          .then((snap) => snap.docs.length);
+
+      final followingCount = await _firestore
+          .collection('users')
+          .doc(uid)
+          .collection('following')
+          .get()
+          .then((snap) => snap.docs.length);
 
       setState(() {
         // Format username: Capitalize first letter of each word
@@ -64,12 +79,12 @@ class _RightDrawerState extends State<RightDrawer> {
         // Format userTag: Ensure "@" is present and make it lowercase
         String rawUserTag = userData.containsKey("userTag") ? userData["userTag"] : "unknown";
         userid = rawUserTag.startsWith("@") ? rawUserTag.toLowerCase() : "@${rawUserTag.toLowerCase()}";
-
-        follower = userData.containsKey("followers") ? userData["followers"].toString() : "0";
-        following = userData.containsKey("following") ? userData["following"].toString() : "0";
         onlineStatus = userData.containsKey("status") ? userData["status"] : false;
         profilePic = userData['profilePictureUrl'] ?? ''; // ✅ fixed
         _isOnline = onlineStatus;
+        follower = followerCount;
+        following = followingCount;
+
       });
 
 
@@ -137,10 +152,31 @@ class _RightDrawerState extends State<RightDrawer> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundImage: profilePic.isNotEmpty
-                                  ? NetworkImage(profilePic)
-                                  : const AssetImage("assets/avatar_placeholder.png") as ImageProvider,
                               radius: 35,
+                              backgroundColor: Colors.grey.shade200,
+                              child: ClipOval(
+                                child: CachedNetworkImage(
+                                  imageUrl: profilePic,
+                                  width: 112,
+                                  height: 112,
+                                  fit: BoxFit.cover,
+                                  placeholder: (context, url) => Shimmer.fromColors(
+                                    baseColor: Colors.grey.shade300,
+                                    highlightColor: Colors.grey.shade100,
+                                    child: Container(
+                                      width: 112,
+                                      height: 112,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                  errorWidget: (context, url, error) => Image.asset(
+                                    'assets/avatar_placeholder.png',
+                                    width: 112,
+                                    height: 112,
+                                    fit: BoxFit.cover,
+                                  ),
+                                ),
+                              ),
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -209,9 +245,9 @@ class _RightDrawerState extends State<RightDrawer> {
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          _buildStatCard("Follower", follower,
+                          _buildStatCard("Follower", follower.toString(),
                               FollowListPage( userId: userUid,initialPageIndex: 0, currentUserId: widget.userId ?? currentUserId!,)),
-                          _buildStatCard("Following", following,
+                          _buildStatCard("Following", following.toString(),
                               FollowListPage( userId: userUid,initialPageIndex: 1, currentUserId: widget.userId ?? currentUserId!)),
                         ],
                       ),
@@ -222,7 +258,7 @@ class _RightDrawerState extends State<RightDrawer> {
                       // Drawer Menu Items
                       Column(
                         children: [
-                          _buildDrawerItem(Icons.person, "Profile", const ProfilePage()),
+                          _buildDrawerItem(Icons.person, "Profile", ProfilePage(userId: user?.uid,)),
                           _buildDrawerItem(Icons.bookmark, "Saved", const UserSavedPost()),
                           _buildDrawerItem(Icons.history, "History", const UserHistory()),
                           _buildDrawerItem(Icons.workspace_premium, "Premium", const Premium()),

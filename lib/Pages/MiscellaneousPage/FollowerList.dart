@@ -26,7 +26,10 @@ class _FollowListPageState extends State<FollowListPage>
   late TabController _tabController;
   List<Map<String, dynamic>> _followers = [];
   List<Map<String, dynamic>> _following = [];
+  String _searchQuery = '';
   bool _isLoading = true;
+
+  final Map<String, dynamic> _userCache = {};
 
   @override
   void initState() {
@@ -36,27 +39,7 @@ class _FollowListPageState extends State<FollowListPage>
       vsync: this,
       initialIndex: widget.initialPageIndex.clamp(0, 1),
     );
-    _tabController.addListener(_handleTabChange);
     _loadUsers();
-  }
-
-  void _handleTabChange() {
-    if (_tabController.indexIsChanging) return;
-    setState(() => _isLoading = true);
-    _loadUsers();
-  }
-
-  void _loadUsers() async {
-    final followersFuture = fetchUsers('followers');
-    final followingFuture = fetchUsers('following');
-
-    final results = await Future.wait([followersFuture, followingFuture]);
-
-    setState(() {
-      _followers = results[0];
-      _following = results[1];
-      _isLoading = false;
-    });
   }
 
   @override
@@ -67,7 +50,6 @@ class _FollowListPageState extends State<FollowListPage>
 
   @override
   void dispose() {
-    _tabController.removeListener(_handleTabChange);
     routeObserver.unsubscribe(this);
     _tabController.dispose();
     super.dispose();
@@ -78,7 +60,21 @@ class _FollowListPageState extends State<FollowListPage>
     _loadUsers();
   }
 
-  Future<List<Map<String, dynamic>>> fetchUsers(String type) async {
+  Future<void> _loadUsers() async {
+    setState(() => _isLoading = true);
+    final followersFuture = _fetchUsers('followers');
+    final followingFuture = _fetchUsers('following');
+
+    final results = await Future.wait([followersFuture, followingFuture]);
+
+    setState(() {
+      _followers = results[0];
+      _following = results[1];
+      _isLoading = false;
+    });
+  }
+
+  Future<List<Map<String, dynamic>>> _fetchUsers(String type) async {
     final snapshot = await FirebaseFirestore.instance
         .collection('users')
         .doc(widget.userId)
@@ -88,182 +84,302 @@ class _FollowListPageState extends State<FollowListPage>
     List<Map<String, dynamic>> userList = [];
 
     for (var doc in snapshot.docs) {
-      final userDoc = await FirebaseFirestore.instance
+      final uid = doc.id;
+
+      if (_userCache.containsKey(uid)) {
+        userList.add(_userCache[uid]);
+        continue;
+      }
+
+      final userDoc = await FirebaseFirestore.instance.collection('users').doc(uid).get();
+
+      if (!userDoc.exists) continue;
+
+      final userData = userDoc.data()!;
+      final isFollowingSnapshot = await FirebaseFirestore.instance
           .collection('users')
-          .doc(doc.id)
+          .doc(widget.currentUserId)
+          .collection('following')
+          .doc(uid)
           .get();
 
-      if (userDoc.exists) {
-        final userData = userDoc.data()!;
-        final isFollowingSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(widget.currentUserId)
-            .collection('following')
-            .doc(doc.id)
-            .get();
+      final followsYouSnapshot = await FirebaseFirestore.instance
+          .collection('users')
+          .doc(uid)
+          .collection('following')
+          .doc(widget.currentUserId)
+          .get();
 
-        final isFollowedBackSnapshot = await FirebaseFirestore.instance
-            .collection('users')
-            .doc(doc.id)
-            .collection('following')
-            .doc(widget.currentUserId)
-            .get();
+      final userMap = {
+        ...userData,
+        'uid': uid,
+        'isFollowing': isFollowingSnapshot.exists,
+        'followsYou': followsYouSnapshot.exists,
+      };
 
-        userList.add({
-          ...userData,
-          'uid': doc.id,
-          'isFollowing': isFollowingSnapshot.exists,
-          'followsYou': isFollowedBackSnapshot.exists,
-        });
-      }
+      _userCache[uid] = userMap;
+      userList.add(userMap);
     }
 
     return userList;
   }
 
-  Route _createFadeSlideRoute(Widget page) {
-    return PageRouteBuilder(
-      pageBuilder: (context, animation, secondaryAnimation) => page,
-      transitionsBuilder: (context, animation, _, child) {
-        const beginOffset = Offset(0.0, 0.1);
-        const endOffset = Offset.zero;
-        final offsetTween = Tween(begin: beginOffset, end: endOffset)
-            .chain(CurveTween(curve: Curves.easeOut));
+  void _handleUnfollow(String uid) async {
+    final user = _userCache[uid];
+    if (user == null) return;
 
-        final fadeTween = Tween<double>(begin: 0.0, end: 1.0)
-            .chain(CurveTween(curve: Curves.easeOut));
+    final confirm = await showDialog(
+      context: context,
+      builder: (_) {
+        final colorScheme = Theme.of(context).colorScheme;
+        return Dialog(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          backgroundColor: Theme.of(context).colorScheme.surface,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 40, vertical: 24), // Reduced width
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Avatar
+                CircleAvatar(
+                  radius: 34,
+                  backgroundImage: (user['profilePictureUrl'] != null &&
+                      user['profilePictureUrl'].toString().isNotEmpty)
+                      ? NetworkImage(user['profilePictureUrl'])
+                      : null,
+                  backgroundColor: Theme.of(context).colorScheme.primary.withOpacity(0.1),
+                  child: (user['profilePictureUrl'] == null ||
+                      user['profilePictureUrl'].toString().isEmpty)
+                      ? Icon(Icons.person, size: 38, color: Theme.of(context).colorScheme.onBackground)
+                      : null,
+                ),
+                const SizedBox(height: 12),
 
-        return FadeTransition(
-          opacity: animation.drive(fadeTween),
-          child: SlideTransition(
-            position: animation.drive(offsetTween),
+                // Name & Tag
+                Text(
+                  user['userName'] ?? '',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).colorScheme.onBackground,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '@${user['userTag']}',
+                  style: TextStyle(
+                    fontSize: 13,
+                    color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                  ),
+                ),
+
+                const SizedBox(height: 12),
+
+                // Info Text
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.visibility_off_outlined, size: 16, color: Colors.grey[600]),
+                    const SizedBox(width: 4),
+                    Text(
+                      'You won’t see their posts anymore',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface.withOpacity(0.6),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 20),
+
+                // Unfollow Button
+                ElevatedButton.icon(
+                  onPressed: () => Navigator.pop(context, true),
+                  icon: const Icon(Icons.person_remove_rounded, size: 18),
+                  label: const Text('Unfollow'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.redAccent,
+                    foregroundColor: Colors.white,
+                    minimumSize: const Size.fromHeight(40),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Cancel Button
+                TextButton.icon(
+                  onPressed: () => Navigator.pop(context, false),
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  label: const Text('Cancel'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: Theme.of(context).colorScheme.primary,
+                    minimumSize: const Size.fromHeight(40),
+                    textStyle: const TextStyle(fontWeight: FontWeight.w500),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+
+
+      },
+    );
+
+    if (confirm != true) return;
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.currentUserId)
+        .collection('following')
+        .doc(uid)
+        .delete();
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('followers')
+        .doc(widget.currentUserId)
+        .delete();
+
+    setState(() {
+      _userCache[uid]?['isFollowing'] = false;
+    });
+
+    await _loadUsers();
+  }
+
+
+  Future<void> _followBack(String uid) async {
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(widget.currentUserId)
+        .collection('following')
+        .doc(uid)
+        .set({});
+
+    await FirebaseFirestore.instance
+        .collection('users')
+        .doc(uid)
+        .collection('followers')
+        .doc(widget.currentUserId)
+        .set({});
+
+    setState(() {
+      _userCache[uid]?['isFollowing'] = true;
+    });
+
+    await _loadUsers();
+  }
+
+  Widget _buildUserTile(Map<String, dynamic> user, bool isFollowerTab) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final isFollowing = user['isFollowing'] ?? false;
+    final followsYou = user['followsYou'] ?? false;
+    final uid = user['uid'];
+
+    String? buttonText;
+    VoidCallback? onPressed;
+
+    if (isFollowerTab && !isFollowing && followsYou) {
+      buttonText = 'Follow back';
+      onPressed = () => _followBack(uid);
+    } else if (isFollowing) {
+      buttonText = 'Unfollow';
+      onPressed = () => _handleUnfollow(uid);
+    } else {
+      buttonText = null;
+    }
+
+    return ListTile(
+      onTap: () => Navigator.push(
+        context,
+        PageRouteBuilder(
+          pageBuilder: (_, __, ___) => ProfilePage(userId: uid),
+          transitionsBuilder: (_, animation, __, child) => FadeTransition(
+            opacity: animation,
             child: child,
           ),
-        );
+        ),
+      ),
+      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      leading: CircleAvatar(
+        radius: 26,
+        backgroundImage: (user['profilePictureUrl'] != null && user['profilePictureUrl'].toString().isNotEmpty)
+            ? NetworkImage(user['profilePictureUrl'])
+            : null,
+        child: (user['profilePictureUrl'] == null || user['profilePictureUrl'].toString().isEmpty)
+            ? const Icon(Icons.person, color: Colors.white)
+            : null,
+      ),
+      title: Text(user['userName'] ?? '', style: TextStyle(color: colorScheme.onBackground, fontWeight: FontWeight.bold)),
+      subtitle: Text('@${user['userTag'] ?? ''}', style: TextStyle(color: colorScheme.onSurface.withOpacity(0.6))),
+      trailing: buttonText != null
+          ? TextButton(
+        onPressed: onPressed,
+        style: TextButton.styleFrom(
+          backgroundColor: buttonText == 'Unfollow' ? colorScheme.surfaceVariant : Colors.blueAccent,
+          foregroundColor: buttonText == 'Unfollow' ? Colors.red : Colors.white,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+        ),
+        child: Text(buttonText, style: const TextStyle(fontWeight: FontWeight.w600)),
+      )
+          : null,
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: TextField(
+        decoration: InputDecoration(
+          hintText: 'Search users...',
+          prefixIcon: const Icon(Icons.search),
+          filled: true,
+          fillColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.2),
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(12), borderSide: BorderSide.none),
+        ),
+        onChanged: (value) => setState(() => _searchQuery = value.toLowerCase()),
+      ),
+    );
+  }
+
+  Widget _buildUserList(List<Map<String, dynamic>> users, bool isFollowerTab) {
+    if (_isLoading) return _buildShimmerList();
+
+    final filtered = users.where((user) {
+      final name = user['userName']?.toLowerCase() ?? '';
+      final tag = user['userTag']?.toLowerCase() ?? '';
+      return name.contains(_searchQuery) || tag.contains(_searchQuery);
+    }).toList();
+
+    if (filtered.isEmpty) {
+      return const Center(child: Text('No users found'));
+    }
+
+    return ListView.builder(
+      itemCount: filtered.length + 1,
+      itemBuilder: (context, index) {
+        if (index == 0) return _buildSearchBar();
+        return _buildUserTile(filtered[index - 1], isFollowerTab);
       },
     );
   }
 
-  Widget buildUserTile(Map<String, dynamic> user) {
-    return StatefulBuilder(
-      builder: (context, setInnerState) {
-        bool isFollowing = user['isFollowing'] ?? false;
-        final bool followsYou = user['followsYou'] ?? false;
-        final bool isInFollowingTab = _tabController.index == 1;
-        final ColorScheme colorScheme = Theme.of(context).colorScheme;
-
-        String buttonText = '';
-        Color backgroundColor = Colors.transparent;
-        Color textColor = colorScheme.onPrimary;
-
-        if (isInFollowingTab) {
-          buttonText = 'Unfollow';
-          backgroundColor = colorScheme.surfaceVariant;
-          textColor = Colors.red;
-        } else if (followsYou && !isFollowing) {
-          buttonText = 'Follow back';
-          backgroundColor = Colors.blue;
-          textColor = Colors.white;
-        } else if (isFollowing) {
-          buttonText = 'Following';
-          backgroundColor = Colors.grey; // neutral background
-          textColor = colorScheme.onSurface; // subtle text
-        }
-
-        return ListTile(
-          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-          onTap: () {
-            Navigator.of(context).push(
-              _createFadeSlideRoute(ProfilePage(userId: user['uid'])),
-            );
-          },
-          leading: CircleAvatar(
-            radius: 26,
-            backgroundColor: Colors.grey[300],
-            backgroundImage: (user['profilePictureUrl'] != null &&
-                user['profilePictureUrl'].toString().isNotEmpty)
-                ? NetworkImage(user['profilePictureUrl'])
-                : null,
-            child: (user['profilePictureUrl'] == null ||
-                user['profilePictureUrl'].toString().isEmpty)
-                ? const Icon(Icons.person, size: 26, color: Colors.white)
-                : null,
-          ),
-          title: Text(
-            user['userName'] ?? '',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-              color: colorScheme.onBackground,
-            ),
-          ),
-          subtitle: Text(
-            '@${user['userTag'] ?? ''}',
-            style: TextStyle(
-              color: colorScheme.onSurface.withOpacity(0.6),
-            ),
-          ),
-          trailing: buttonText.isNotEmpty
-              ? TextButton(
-            onPressed: () async {
-              final followRef = FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(widget.currentUserId)
-                  .collection('following')
-                  .doc(user['uid']);
-
-              final followerRef = FirebaseFirestore.instance
-                  .collection('users')
-                  .doc(user['uid'])
-                  .collection('followers')
-                  .doc(widget.currentUserId);
-
-              if (isFollowing || isInFollowingTab) {
-                await followRef.delete();
-                await followerRef.delete();
-                isFollowing = false;
-              } else {
-                await followRef.set({});
-                await followerRef.set({});
-                isFollowing = true;
-              }
-
-              setInnerState(() {
-                user['isFollowing'] = isFollowing;
-              });
-
-              setState(() => _loadUsers());
-            },
-            style: TextButton.styleFrom(
-              backgroundColor: backgroundColor,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: Text(
-              buttonText,
-              style: TextStyle(
-                color: textColor,
-                fontWeight: FontWeight.w500,
-              ),
-            ),
-          )
-              : null,
-        );
-      },
-    );
-  }
-
-
-
-  Widget buildShimmerList() {
+  Widget _buildShimmerList() {
     final baseColor = Colors.grey.shade400;
     final highlightColor = Colors.blue.shade200;
 
     return ListView.builder(
-      itemCount: 8,
-      itemBuilder: (context, index) => Padding(
+      itemCount: 6,
+      itemBuilder: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
         child: Row(
           children: [
@@ -311,32 +427,20 @@ class _FollowListPageState extends State<FollowListPage>
     );
   }
 
-
-  Widget buildUserList(List<Map<String, dynamic>> users) {
-    if (_isLoading) return buildShimmerList();
-    if (users.isEmpty) {
-      return const Center(child: Text("No users found"));
-    }
-    return ListView.builder(
-      itemCount: users.length,
-      itemBuilder: (context, index) => buildUserTile(users[index]),
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text("Followers & Following"),
+        title: const Text("Connections"),
         backgroundColor: colorScheme.background,
         foregroundColor: colorScheme.onBackground,
         bottom: TabBar(
           controller: _tabController,
-          labelColor: Colors.blueAccent.shade400, // 💠 Cool label color
+          labelColor: Colors.blueAccent,
           unselectedLabelColor: colorScheme.onSurface.withOpacity(0.5),
-          indicatorColor: Colors.blueAccent.shade400, // 💠 Cool indicator color
+          indicatorColor: Colors.blueAccent,
           labelStyle: const TextStyle(fontWeight: FontWeight.bold),
           indicatorWeight: 3,
           tabs: const [
@@ -345,12 +449,11 @@ class _FollowListPageState extends State<FollowListPage>
           ],
         ),
       ),
-
       body: TabBarView(
         controller: _tabController,
         children: [
-          buildUserList(_followers),
-          buildUserList(_following),
+          _buildUserList(_followers, true),
+          _buildUserList(_following, false),
         ],
       ),
     );
