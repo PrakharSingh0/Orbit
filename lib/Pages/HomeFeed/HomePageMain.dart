@@ -25,19 +25,20 @@ class HomePageMain extends StatefulWidget {
 class _HomePageMainState extends State<HomePageMain> {
   int _selectedIndex = 0;
   int unreadMessages = 5;
-  bool isLoading = true;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
 
 
   String profilePicturUrl="";
+
   final List<Widget> pages = [
     const FeedPage(),
     const ExplorePage(),
-    const AddPostPage(),
+    const SizedBox(), // Placeholder for AddPostPage
     const InboxPage(),
-    const ProfilePage(userId: '',)
+    const SizedBox(), // Placeholder for ProfilePage
   ];
+
 
   final List<String> appBarTitles = [
     "Orbit",
@@ -105,19 +106,17 @@ class _HomePageMainState extends State<HomePageMain> {
   Future<void> fetchUser() async {
     if (user == null) return;
 
-    DocumentSnapshot userDoc =
-    await _firestore.collection("users").doc(user!.uid).get();
+    try {
+      final doc = await _firestore.collection("users").doc(user!.uid).get();
 
-    if (userDoc.exists) {
-      Map<String, dynamic> userData = userDoc.data() as Map<String, dynamic>;
-
-      setState(() {
-        profilePicturUrl = userData['profilePictureUrl'] ?? ''; // ✅ fixed
-      });
-
-
-    } else {
-      debugPrint("User document does not exist.");
+      if (doc.exists) {
+        final data = doc.data() as Map<String, dynamic>;
+        setState(() {
+          profilePicturUrl = (data['profilePictureUrl'] ?? '') as String;
+        });
+      }
+    } catch (e) {
+      debugPrint("Failed to fetch user: $e");
     }
   }
 
@@ -125,18 +124,21 @@ class _HomePageMainState extends State<HomePageMain> {
 
 
   void _onItemTapped(int index) {
-    if (index == 4) { // Profile Button Clicked
-      _navigateWithCoolAnimation(context, ProfilePage(userId: user?.uid,)); // ✅ Open with animation
+    if (index == 2) {
+      _navigateWithCoolAnimation(context, const AddPostPage());
+      return;
     }
-    if(index==2){
-      _navigateWithCoolAnimation(context, AddPostPage());
+
+    if (index == 4) {
+      _navigateWithCoolAnimation(context, ProfilePage(userId: user?.uid ?? ""));
+      return;
     }
-    else {
-      setState(() {
-        _selectedIndex = index;
-      });
-    }
+
+    setState(() {
+      _selectedIndex = index;
+    });
   }
+
 
 
   @override

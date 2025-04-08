@@ -197,14 +197,28 @@ class _FeedPageState extends State<FeedPage> {
           child: StreamBuilder<List<PostModel>>(
             stream: _fetchPosts(uids),
             builder: (context, postSnapshot) {
-              if (postSnapshot.connectionState == ConnectionState.waiting) {
+              if (postSnapshot.hasError) {
+                return const Center(child: Text("Something went wrong"));
+              }
+              if (!postSnapshot.hasData) {
+                // Still waiting for first data
                 return _buildShimmer();
               }
-
               final posts = postSnapshot.data ?? [];
 
               if (posts.isEmpty) {
-                return _buildEmptyState();
+                // Wrap _buildEmptyState inside a ListView so RefreshIndicator works
+                return RefreshIndicator(
+                  onRefresh: _refreshFeed,
+                  child: ListView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    children: [
+                      SizedBox(height: MediaQuery.of(context).size.height * 0.2),
+                      _buildEmptyState(),
+                    ],
+                  ),
+                );
+
               }
 
               return ListView.builder(
@@ -217,6 +231,7 @@ class _FeedPageState extends State<FeedPage> {
             },
           ),
         );
+
       },
     );
   }

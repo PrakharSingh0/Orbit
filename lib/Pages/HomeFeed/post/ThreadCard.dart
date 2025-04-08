@@ -158,332 +158,334 @@ class _ThreadCardState extends State<ThreadCard> {
 
     return Container(
       color: theme.colorScheme.surface,
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            /// --- Header ---
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (_) => ProfilePage(
-                          userId: widget.post.uid,
-                        ),
-                      ),
-                    );
-                  },
-                  child: CircleAvatar(
-                    radius: 25,
-                    backgroundImage: (widget.post.userImage.isNotEmpty)
-                        ? NetworkImage(widget.post.userImage)
-                        : const AssetImage("assets/avatar_placeholder.png")
-                    as ImageProvider,
-                  ),
-                ),
-
-                const SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children:[ Text(
-                        widget.post.userName,
-                        style: GoogleFonts.aBeeZee(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                        const SizedBox(width: 8,),
-                        Text(
-                          "@${widget.post.userTag}",
-                          style: GoogleFonts.aBeeZee(
-                            fontWeight: FontWeight.w300,fontSize: 14,
-                            color: Theme.of(context).colorScheme.onSurface.withAlpha((0.4*255).toInt()),
+      child: Column(
+        children:[ Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              /// --- Header ---
+              Row(
+                children: [
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => ProfilePage(
+                            userId: widget.post.uid,
                           ),
                         ),
-                    ]),
-                    Text(
-                      _getTimeAgo(widget.post.postTime.toDate()),
-                      style: GoogleFonts.aBeeZee(
-                        fontSize: 12,
-                        color: Theme.of(context).colorScheme.onSurface.withAlpha((0.4 * 255).toInt()),
-                      ),
+                      );
+                    },
+                    child: CircleAvatar(
+                      radius: 25,
+                      backgroundImage: (widget.post.userImage.isNotEmpty)
+                          ? NetworkImage(widget.post.userImage)
+                          : const AssetImage("assets/avatar_placeholder.png")
+                      as ImageProvider,
                     ),
-                  ],
-                ),
-                const Spacer(),
-                IconButton(
-                  onPressed: () => PostOptions.show(
-                    context,
-                    postOwnerUid: widget.post.uid, // pass the UID of the post's owner
-                      onDelete: () async {
-                        final shouldDelete = await showDialog<bool>(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: const Text("Delete Post"),
-                            content: const Text("Are you sure you want to delete this post? This action cannot be undone."),
-                            actions: [
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, false),
-                                child: const Text("Cancel"),
-                              ),
-                              TextButton(
-                                onPressed: () => Navigator.pop(context, true),
-                                child: const Text("Delete", style: TextStyle(color: Colors.red)),
-                              ),
-                            ],
+                  ),
+
+                  const SizedBox(width: 10),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children:[ Text(
+                          widget.post.userName,
+                          style: GoogleFonts.aBeeZee(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
                           ),
-                        );
+                        ),
+                          const SizedBox(width: 8,),
+                          Text(
+                            "@${widget.post.userTag}",
+                            style: GoogleFonts.aBeeZee(
+                              fontWeight: FontWeight.w300,fontSize: 14,
+                              color: Theme.of(context).colorScheme.onSurface.withAlpha((0.4*255).toInt()),
+                            ),
+                          ),
+                      ]),
+                      Text(
+                        _getTimeAgo(widget.post.postTime.toDate()),
+                        style: GoogleFonts.aBeeZee(
+                          fontSize: 12,
+                          color: Theme.of(context).colorScheme.onSurface.withAlpha((0.4 * 255).toInt()),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    onPressed: () => PostOptions.show(
+                      context,
+                      postOwnerUid: widget.post.uid, // pass the UID of the post's owner
+                        onDelete: () async {
+                          final shouldDelete = await showDialog<bool>(
+                            context: context,
+                            builder: (context) => AlertDialog(
+                              title: const Text("Delete Post"),
+                              content: const Text("Are you sure you want to delete this post? This action cannot be undone."),
+                              actions: [
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, false),
+                                  child: const Text("Cancel"),
+                                ),
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, true),
+                                  child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                                ),
+                              ],
+                            ),
+                          );
 
-                        if (shouldDelete == true) {
-                          try {
-                            final postId =  widget.post.id;
-                            final uid =  widget.post.uid;
+                          if (shouldDelete == true) {
+                            try {
+                              final postId =  widget.post.id;
+                              final uid =  widget.post.uid;
 
-                            // Delete from global posts collection
-                            await FirebaseFirestore.instance.collection('posts').doc(postId).delete();
+                              // Delete from global posts collection
+                              await FirebaseFirestore.instance.collection('posts').doc(postId).delete();
 
-                            // Delete from user's posts subcollection
-                            await FirebaseFirestore.instance
-                                .collection('users')
-                                .doc(uid)
-                                .collection('posts')
-                                .doc(postId)
-                                .delete();
+                              // Delete from user's posts subcollection
+                              await FirebaseFirestore.instance
+                                  .collection('users')
+                                  .doc(uid)
+                                  .collection('posts')
+                                  .doc(postId)
+                                  .delete();
 
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              const SnackBar(content: Text("Post deleted successfully.")),
-                            );
-                          } catch (e) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(content: Text("Failed to delete post: $e")),
-                            );
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(content: Text("Post deleted successfully.")),
+                              );
+                            } catch (e) {
+                              ScaffoldMessenger.of(context).showSnackBar(
+                                SnackBar(content: Text("Failed to delete post: $e")),
+                              );
+                            }
                           }
                         }
-                      }
 
+                    ),
+                    icon: Icon(
+                      Bootstrap.three_dots,
+                      size: 18,
+                      color: theme.colorScheme.onSurface.withOpacity(0.6),
+                    ),
                   ),
-                  icon: Icon(
-                    Bootstrap.three_dots,
-                    size: 18,
-                    color: theme.colorScheme.onSurface.withOpacity(0.6),
+                ],
+              ),
+
+              const SizedBox(height: 10),
+
+              /// --- Text Content ---
+              if (widget.post.postTitle.isNotEmpty)
+                Text(
+                  widget.post.postTitle,
+                  style: GoogleFonts.abel(
+                    fontSize: 18,fontWeight: FontWeight.w600,
+                  ),
+                ),
+              if (widget.post.postBody.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Text(
+                  widget.post.postBody,
+                  style: GoogleFonts.actor(fontSize: 14,fontWeight: FontWeight.w300),
+                ),
+              ],
+
+              /// --- Image (Optional) ---
+              if (widget.post.postImage.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                GestureDetector(
+                  onTap: () => _openFullScreenImage(context),
+                  child: Hero(
+                    tag: "image_${widget.post.id ?? UniqueKey()}",
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(12),
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          maxHeight: 300,
+                          minWidth: double.infinity,
+                        ),
+                        child: Image.network(
+                          widget.post.postImage,
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                    ),
                   ),
                 ),
               ],
-            ),
 
-            const SizedBox(height: 10),
-
-            /// --- Text Content ---
-            if (widget.post.postTitle.isNotEmpty)
-              Text(
-                widget.post.postTitle,
-                style: GoogleFonts.abel(
-                  fontSize: 18,fontWeight: FontWeight.w600,
-                ),
-              ),
-            if (widget.post.postBody.isNotEmpty) ...[
-              const SizedBox(height: 6),
-              Text(
-                widget.post.postBody,
-                style: GoogleFonts.actor(fontSize: 14,fontWeight: FontWeight.w300),
-              ),
-            ],
-
-            /// --- Image (Optional) ---
-            if (widget.post.postImage.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              GestureDetector(
-                onTap: () => _openFullScreenImage(context),
-                child: Hero(
-                  tag: "image_${widget.post.id ?? UniqueKey()}",
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: ConstrainedBox(
-                      constraints: const BoxConstraints(
-                        maxHeight: 300,
-                        minWidth: double.infinity,
-                      ),
-                      child: Image.network(
-                        widget.post.postImage,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ],
-
-            /// --- External Link Preview (Optional) ---
-            if (widget.post.externalLink.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Container(
-                decoration: BoxDecoration(
-                  color: theme.colorScheme.onSurface.withOpacity(0.05),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                padding: const EdgeInsets.all(8),
-                child: Row(
-                  children: [
-                    Icon(MingCute.link_2_line),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                           Text("Open external link ",
-                              style: GoogleFonts.sanchez(fontSize: 14,
-                                fontWeight: FontWeight.w600,
-                              ),),
-                          Text(widget.post.externalLink ,
-                              overflow: TextOverflow.ellipsis,
-                              maxLines: 1,
-                              style: const TextStyle(fontSize: 12)),
-                        ],
-                      ),
-                    ),
-                    IconButton(
-                      onPressed: () {
-                        _openUrl(widget.post.externalLink );
-                      },
-                      icon: const Icon(
-                        EvaIcons.external_link,
-                        size: 18,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-
-            const SizedBox(height: 12),
-
-            /// --- Actions Row ---
-            Row(
-              children: [
-                // Upvote / Downvote
+              /// --- External Link Preview (Optional) ---
+              if (widget.post.externalLink.isNotEmpty) ...[
+                const SizedBox(height: 10),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    border: Border.all(
-                      color: theme.colorScheme.onSurface.withOpacity(0.3),
-                    ),
-                    borderRadius: BorderRadius.circular(20),
+                    color: theme.colorScheme.onSurface.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(12),
                   ),
+                  padding: const EdgeInsets.all(8),
                   child: Row(
                     children: [
-                      GestureDetector(
-                        onTap: _handleUpvote,
-                        child: Icon(
-                          BoxIcons.bx_upvote,
-                          size: 18,
-                          color: isUpvoted
-                              ? theme.colorScheme.primary
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                      Icon(MingCute.link_2_line),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                             Text("Open external link ",
+                                style: GoogleFonts.sanchez(fontSize: 14,
+                                  fontWeight: FontWeight.w600,
+                                ),),
+                            Text(widget.post.externalLink ,
+                                overflow: TextOverflow.ellipsis,
+                                maxLines: 1,
+                                style: const TextStyle(fontSize: 12)),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 6),
-                      Text(
-                        upvoteCount == 0 ? "Upvote" : _formatCount(upvoteCount),
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: theme.colorScheme.onSurface.withOpacity(0.9),
-                        ),
-                      ),
-                      const SizedBox(width: 6),
-                      GestureDetector(
-                        onTap: _handleDownvote,
-                        child: Icon(
-                          BoxIcons.bx_downvote,
+                      IconButton(
+                        onPressed: () {
+                          _openUrl(widget.post.externalLink );
+                        },
+                        icon: const Icon(
+                          EvaIcons.external_link,
                           size: 18,
-                          color: isDownvoted
-                              ? theme.colorScheme.error
-                              : theme.colorScheme.onSurface.withOpacity(0.6),
+                          color: Colors.grey,
                         ),
                       ),
                     ],
                   ),
                 ),
-
-                const Spacer(),
-
-                // Comment Button
-                InkWell(
-                  onTap: _handleComment,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: theme.colorScheme.onSurface.withOpacity(0.3),
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(OctIcons.comment_discussion,
-                            size: 16,
-                            color: theme.colorScheme.onSurface.withOpacity(0.7)),
-                        const SizedBox(width: 6),
-                        Text(
-                          commentCount == 0 ? "Comment" : _formatCount(commentCount),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurface.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-
-                const Spacer(),
-
-                // Share Button
-                InkWell(
-                  onTap: _handleShare,
-                  borderRadius: BorderRadius.circular(20),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(
-                      border: Border.all(
-                        color: theme.colorScheme.onSurface.withOpacity(0.3),
-                      ),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(EvaIcons.share,
-                            size: 18,
-                            color: theme.colorScheme.onSurface.withOpacity(0.7)),
-                        const SizedBox(width: 6),
-                        Text(
-                          shareCount == 0 ? "Share" : _formatCount(shareCount),
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.w500,
-                            color: theme.colorScheme.onSurface.withOpacity(0.9),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
               ],
-            ),
-            SizedBox(height: 10,),
-            Divider(),
-          ],
+
+              const SizedBox(height: 12),
+
+              /// --- Actions Row ---
+              Row(
+                children: [
+                  // Upvote / Downvote
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: theme.colorScheme.onSurface.withOpacity(0.3),
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                    child: Row(
+                      children: [
+                        GestureDetector(
+                          onTap: _handleUpvote,
+                          child: Icon(
+                            BoxIcons.bx_upvote,
+                            size: 18,
+                            color: isUpvoted
+                                ? theme.colorScheme.primary
+                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          upvoteCount == 0 ? "Upvote" : _formatCount(upvoteCount),
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: theme.colorScheme.onSurface.withOpacity(0.9),
+                          ),
+                        ),
+                        const SizedBox(width: 6),
+                        GestureDetector(
+                          onTap: _handleDownvote,
+                          child: Icon(
+                            BoxIcons.bx_downvote,
+                            size: 18,
+                            color: isDownvoted
+                                ? theme.colorScheme.error
+                                : theme.colorScheme.onSurface.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Comment Button
+                  InkWell(
+                    onTap: _handleComment,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: theme.colorScheme.onSurface.withOpacity(0.3),
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(OctIcons.comment_discussion,
+                              size: 16,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                          const SizedBox(width: 6),
+                          Text(
+                            commentCount == 0 ? "Comment" : _formatCount(commentCount),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.onSurface.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const Spacer(),
+
+                  // Share Button
+                  InkWell(
+                    onTap: _handleShare,
+                    borderRadius: BorderRadius.circular(20),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: theme.colorScheme.onSurface.withOpacity(0.3),
+                        ),
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(EvaIcons.share,
+                              size: 18,
+                              color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                          const SizedBox(width: 6),
+                          Text(
+                            shareCount == 0 ? "Share" : _formatCount(shareCount),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: theme.colorScheme.onSurface.withOpacity(0.9),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
-      ),
+          const SizedBox(height: 10,),
+          Divider(color: theme.colorScheme.onSurface.withAlpha((0.2*255).toInt()),thickness: .5,),
+      ]),
     );
   }
 }

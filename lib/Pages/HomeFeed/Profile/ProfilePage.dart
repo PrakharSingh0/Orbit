@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 import '../../MiscellaneousPage/FollowerList.dart';
+import '../post/ThreadCard.dart';
+import '../post/postModel.dart';
 import 'EditProfilePage.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 
@@ -31,11 +34,16 @@ class _ProfilePageState extends State<ProfilePage> {
   String profileBanner = '';
   int follower = 0;
   int following = 0;
+  int postCount=0;
   bool isLoading = true;
 
   String? currentUserId;
   bool isOwnProfile = true;
   bool isFollowing = false;
+
+  List<PostModel> userPosts = [];
+  bool isPostsLoading = true;
+
 
 
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -43,13 +51,65 @@ class _ProfilePageState extends State<ProfilePage> {
   final String currentUserUid = FirebaseAuth.instance.currentUser!.uid;
 
   @override
+  @override
   void initState() {
     super.initState();
     currentUserId = FirebaseAuth.instance.currentUser?.uid;
     isOwnProfile = widget.userId == null || widget.userId == currentUserId;
     fetchUserData();
+    fetchUserPosts(); // Fetch posts
     if (!isOwnProfile) checkFollowingStatus();
   }
+
+
+  Future<void> fetchUserPosts() async {
+    try {
+      final uid = widget.userId ?? currentUserId;
+      if (uid != null) {
+        final snapshot = await FirebaseFirestore.instance
+            .collection('users')
+            .doc(uid)
+            .collection('posts')
+            .orderBy('timestamp', descending: true)
+            .get();
+
+
+        final posts = snapshot.docs.map((doc) {
+          final data = doc.data();
+          return PostModel(
+            id: doc.id,
+            uid: data['uid'],
+            userName: data['userName'] ?? 'Unknown',
+            userTag: data['userTag'] ?? '',
+            postTime: data['timestamp'] ?? Timestamp.now(),
+            postTitle: data['caption'] ?? '',
+            postBody: data['body'] ?? '',
+            userImage: data['profilePictureUrl'] ?? '',
+            postImage: data['imageUrl'] ?? '',
+            externalLink: data['link'] ?? '',
+          );
+        }).toList();
+
+        setState(() {
+          userPosts = posts;
+          isPostsLoading = false;
+          postCount=posts.length;
+        });
+      }
+    } catch (e) {
+      print('Error fetching posts: $e');
+      setState(() => isPostsLoading = false);
+    }
+  }
+
+  Future<void> fetchData() async{
+    setState(() {
+      fetchUserData();
+      fetchUserPosts();
+    });
+  }
+
+
 
   Future<void> fetchUserData() async {
     setState(() => isLoading = true);
@@ -244,7 +304,7 @@ class _ProfilePageState extends State<ProfilePage> {
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
           : RefreshIndicator(
-        onRefresh: fetchUserData,
+        onRefresh: fetchData,
         child: SingleChildScrollView(
           physics: const AlwaysScrollableScrollPhysics(),
           child: Column(
@@ -357,7 +417,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildStatCard("Posts", "0", Icons.grid_view_rounded, test()),
+                        _buildStatCard("Posts", postCount.toString(), Icons.grid_view_rounded, test()),
                         const SizedBox(width: 20),
                         _buildStatCard(
                           "Follower",
@@ -379,7 +439,37 @@ class _ProfilePageState extends State<ProfilePage> {
                   ],
                 ),
               ),
-              const Divider(),
+
+
+              Padding(
+                padding: EdgeInsets.symmetric(horizontal: 15),
+                child: Text(
+                  "Posts",
+                  style: GoogleFonts.actor(
+                    fontWeight: FontWeight.w700,fontSize: 22
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Align(alignment: Alignment.centerRight,child: FractionallySizedBox(widthFactor:.97,child: Divider())),
+
+              isPostsLoading
+                  ? const Center(child: CircularProgressIndicator())
+                  : userPosts.isEmpty
+                  ? const Padding(
+                padding: EdgeInsets.symmetric(vertical: 40),
+                child: Center(child: Text("No posts yet")),
+              )
+                  : ListView.builder(
+                padding: EdgeInsets.symmetric(vertical: 0),
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: userPosts.length,
+                itemBuilder: (context, index) {
+                  final post = userPosts[index];
+                  return ThreadCard(post: post);
+                },
+              ),
             ],
           ),
         ),
