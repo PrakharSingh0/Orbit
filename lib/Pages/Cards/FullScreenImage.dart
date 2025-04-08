@@ -50,12 +50,13 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
             child: Transform.translate(
               offset: Offset(0, _dragOffset), // Apply drag offset
               child: PhotoView(
-                imageProvider: AssetImage(widget.imagePath),
+                imageProvider: NetworkImage(widget.imagePath), // <-- Fixed
                 minScale: PhotoViewComputedScale.contained,
                 maxScale: PhotoViewComputedScale.covered * 2,
                 backgroundDecoration: const BoxDecoration(color: Colors.transparent),
-                controller: _photoViewController, // Pass the controller
+                controller: _photoViewController,
               ),
+
             ),
           ),
 

@@ -164,13 +164,13 @@ class _HomePageMainState extends State<HomePageMain> {
         titleSpacing: 0,
         actions: [
           IconButton(
-            icon: const Icon(CupertinoIcons.search),
+            icon: const Icon(BoxIcons.bx_search_alt),
             onPressed: () {
               _navigateWithCoolAnimation(context, const SearchUserPage());
             },
           ),
 
-          IconButton(onPressed: () {}, icon: const Icon(CupertinoIcons.heart_fill)),
+          IconButton(onPressed: () {}, icon: const Icon(AntDesign.heart_outline)),
           Builder(
             builder: (context) {
               return GestureDetector(
@@ -233,7 +233,7 @@ class _HomePageMainState extends State<HomePageMain> {
             label: "Explore",
           ),
           const NavigationDestination(
-            icon: Icon(CupertinoIcons.add_circled, size: 26),
+            icon: Icon(Icons.add, size: 40),
             selectedIcon: Icon(CupertinoIcons.add_circled_solid, color: Colors.blueAccent, size: 28),
             label: "Post",
           ),

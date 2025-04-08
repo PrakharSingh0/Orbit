@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:orbit/Pages/HomeFeed/post/ThreadCard.dart';
 import 'package:orbit/Pages/HomeFeed/post/postModel.dart';
+import 'package:shimmer/shimmer.dart';
 
 class FeedPage extends StatefulWidget {
   const FeedPage({super.key});
@@ -40,7 +41,6 @@ class _FeedPageState extends State<FeedPage> {
         .doc(currentUid)
         .collection('following')
         .get();
-
     final followingUids = followingSnapshot.docs.map((doc) => doc.id).toList();
     followingUids.add(currentUid); // include your own UID
 
@@ -96,13 +96,139 @@ class _FeedPageState extends State<FeedPage> {
     });
   }
 
+  Widget buildShimmer() {
+    return ListView.builder(
+      itemCount: 5,
+      physics: const AlwaysScrollableScrollPhysics(),
+      padding: const EdgeInsets.symmetric(vertical: 10),
+      itemBuilder: (_, __) => Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
+        child: Shimmer.fromColors(
+          baseColor: Colors.grey.shade300,
+          highlightColor: Colors.grey.shade100,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Row with avatar and name
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // Avatar
+                  Container(
+                    width: 42,
+                    height: 42,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  // Name and tag
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 100,
+                        height: 12,
+                        color: Colors.white,
+                      ),
+                      const SizedBox(height: 6),
+                      Container(
+                        width: 60,
+                        height: 10,
+                        color: Colors.white,
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+
+              const SizedBox(height: 16),
+
+              // Post title / caption
+              Container(
+                width: double.infinity,
+                height: 12,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: double.infinity,
+                height: 12,
+                color: Colors.white,
+              ),
+              const SizedBox(height: 8),
+              Container(
+                width: 200,
+                height: 12,
+                color: Colors.white,
+              ),
+
+              const SizedBox(height: 16),
+
+              // Post image
+              Container(
+                width: double.infinity,
+                height: 180,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+
+              const SizedBox(height: 16),
+
+              // Interaction row (buttons)
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: List.generate(3, (_) {
+                  return Container(
+                    width: 60,
+                    height: 12,
+                    color: Colors.white,
+                  );
+                }),
+              )
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+
+  Widget buildEmptyState() {
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.all(32.0),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.inbox_outlined, size: 80, color: Colors.grey[400]),
+            const SizedBox(height: 16),
+            Text(
+              "No posts to show",
+              style: TextStyle(fontSize: 18, color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              "Follow people or create a post to see activity here.",
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Colors.grey[500]),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<String>>(
       future: followingUidsFuture,
       builder: (context, uidSnapshot) {
         if (uidSnapshot.connectionState == ConnectionState.waiting) {
-          return const Center(child: CircularProgressIndicator());
+          return buildShimmer();
         }
 
         final uids = uidSnapshot.data ?? [];
@@ -113,13 +239,13 @@ class _FeedPageState extends State<FeedPage> {
             stream: getPostsFromFollowing(uids),
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
+                return buildShimmer();
               }
 
               final posts = snapshot.data ?? [];
 
               if (posts.isEmpty) {
-                return const Center(child: Text("No posts available."));
+                return buildEmptyState();
               }
 
               return ListView.builder(
