@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -128,11 +129,11 @@ class _ThreadCardState extends State<ThreadCard> {
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 400),
         reverseTransitionDuration: const Duration(milliseconds: 350),
-        pageBuilder: (context, animation, secondaryAnimation) =>
-            FullScreenImagePage(
-              imagePath: widget.post.postImage,
-              heroTag: "image_${widget.post.id ?? UniqueKey()}",
-            ),
+        pageBuilder: (context, animation, secondaryAnimation) => FullScreenImagePage(
+          imagePath: widget.post.postImage,
+          heroTag: "image_${widget.post.id ?? UniqueKey()}",
+          post: widget.post, // ✅ Pass the whole post object
+        ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
           var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
           var scaleTween = Tween<double>(begin: 0.9, end: 1.0);
@@ -151,6 +152,8 @@ class _ThreadCardState extends State<ThreadCard> {
       ),
     );
   }
+
+
 
   @override
   Widget build(BuildContext context) {
@@ -181,10 +184,11 @@ class _ThreadCardState extends State<ThreadCard> {
                     child: CircleAvatar(
                       radius: 25,
                       backgroundImage: (widget.post.userImage.isNotEmpty)
-                          ? NetworkImage(widget.post.userImage)
+                          ? CachedNetworkImageProvider(widget.post.userImage)
                           : const AssetImage("assets/avatar_placeholder.png")
                       as ImageProvider,
                     ),
+
                   ),
 
                   const SizedBox(width: 10),
@@ -310,10 +314,16 @@ class _ThreadCardState extends State<ThreadCard> {
                           maxHeight: 300,
                           minWidth: double.infinity,
                         ),
-                        child: Image.network(
-                          widget.post.postImage,
+                        child: CachedNetworkImage(
+                          imageUrl: widget.post.postImage,
                           fit: BoxFit.cover,
+                          placeholder: (context, url) => Container(
+                            color: Colors.grey.shade200,
+                            child: const Center(child: CircularProgressIndicator(strokeWidth: 1.5)),
+                          ),
+                          errorWidget: (context, url, error) => const Icon(Icons.broken_image),
                         ),
+
                       ),
                     ),
                   ),

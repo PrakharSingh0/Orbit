@@ -265,9 +265,11 @@ class _AddPostPageState extends State<AddPostPage> {
                   TextField(
                     controller: _captionController,
                     maxLines: 1,
+                    maxLength: 100,
                     style: GoogleFonts.poppins(
                         fontSize: 24, fontWeight: FontWeight.w800),
                     decoration: InputDecoration(
+                      counterStyle: const TextStyle(fontSize: 10,),
                       hintText: "What's New",
                       filled: true,
                       fillColor: theme.cardColor,
