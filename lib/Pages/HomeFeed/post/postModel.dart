@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 
 class PostModel {
   final String id;
+  final String uid;
   final String userName;
   final String userTag;
   final Timestamp postTime;
@@ -13,6 +14,7 @@ class PostModel {
 
   PostModel({
     required this.id,
+    required this.uid,
     required this.userName,
     required this.userTag,
     required this.postTime,
@@ -26,6 +28,7 @@ class PostModel {
   factory PostModel.fromMap(Map<String, dynamic> map, String docId) {
     return PostModel(
       id: docId,
+      uid: map['uid'],
       userName: map['userName'] ?? 'Unknown',
       userTag: map['userTag'] ?? '',
       postTime: map['timestamp']?? '',

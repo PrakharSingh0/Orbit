@@ -15,54 +15,50 @@ class FeedPage extends StatefulWidget {
 class _FeedPageState extends State<FeedPage> {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final User? user = FirebaseAuth.instance.currentUser;
 
-  late Future<List<String>> followingUidsFuture;
+  late Future<List<String>> _followingUidsFuture;
 
   @override
   void initState() {
     super.initState();
-    followingUidsFuture = getFollowingUIDs();
+    _followingUidsFuture = _fetchFollowingUIDs();
   }
 
   Future<void> _refreshFeed() async {
     setState(() {
-      followingUidsFuture = getFollowingUIDs();
+      _followingUidsFuture = _fetchFollowingUIDs();
     });
   }
 
-  Future<List<String>> getFollowingUIDs() async {
-    final currentUser = _auth.currentUser;
+  Future<List<String>> _fetchFollowingUIDs() async {
+    final currentUser = user?.uid;
     if (currentUser == null) return [];
 
-    final currentUid = currentUser.uid;
-
-    final followingSnapshot = await _firestore
+    final snapshot = await _firestore
         .collection('users')
-        .doc(currentUid)
+        .doc(currentUser)
         .collection('following')
         .get();
-    final followingUids = followingSnapshot.docs.map((doc) => doc.id).toList();
-    followingUids.add(currentUid); // include your own UID
 
+    final followingUids = snapshot.docs.map((doc) => doc.id).toList();
+    followingUids.add(currentUser); // Include own posts
     return followingUids;
   }
 
-  Stream<List<PostModel>> getPostsFromFollowing(List<String> uids) async* {
-    if (uids.isEmpty) {
-      yield [];
-      return;
-    }
+  Stream<List<PostModel>> _fetchPosts(List<String> uids) async* {
+    if (uids.isEmpty) yield [];
 
-    final chunks = <List<String>>[];
+    final List<List<String>> uidChunks = [];
     for (var i = 0; i < uids.length; i += 10) {
-      chunks.add(uids.sublist(i, i + 10 > uids.length ? uids.length : i + 10));
+      uidChunks.add(uids.sublist(i, i + 10 > uids.length ? uids.length : i + 10));
     }
 
     yield* Stream.multi((controller) {
       final List<PostModel> allPosts = [];
-      int completed = 0;
+      int completedChunks = 0;
 
-      for (final chunk in chunks) {
+      for (final chunk in uidChunks) {
         _firestore
             .collection('posts')
             .where('uid', whereIn: chunk)
@@ -73,9 +69,10 @@ class _FeedPageState extends State<FeedPage> {
             final data = doc.data();
             return PostModel(
               id: doc.id,
+              uid: data['uid'],
               userName: data['userName'] ?? 'Unknown',
               userTag: data['userTag'] ?? '',
-              postTime: data["timestamp"] ?? '',
+              postTime: data["timestamp"] ?? Timestamp.now(),
               postTitle: data['caption'] ?? '',
               postBody: data['body'] ?? '',
               userImage: data['profilePictureUrl'] ?? '',
@@ -85,9 +82,9 @@ class _FeedPageState extends State<FeedPage> {
           }).toList();
 
           allPosts.addAll(posts);
-          completed++;
+          completedChunks++;
 
-          if (completed == chunks.length) {
+          if (completedChunks == uidChunks.length) {
             allPosts.sort((a, b) => b.postTime.compareTo(a.postTime));
             controller.add(allPosts);
           }
@@ -96,11 +93,10 @@ class _FeedPageState extends State<FeedPage> {
     });
   }
 
-  Widget buildShimmer() {
+  Widget _buildShimmer() {
     return ListView.builder(
-      itemCount: 5,
+      itemCount: 4,
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.symmetric(vertical: 10),
       itemBuilder: (_, __) => Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12),
         child: Shimmer.fromColors(
@@ -109,86 +105,49 @@ class _FeedPageState extends State<FeedPage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Row with avatar and name
               Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
-                  // Avatar
                   Container(
                     width: 42,
                     height: 42,
                     decoration: const BoxDecoration(
-                      color: Colors.white,
                       shape: BoxShape.circle,
+                      color: Colors.white,
                     ),
                   ),
                   const SizedBox(width: 12),
-                  // Name and tag
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 100,
-                        height: 12,
-                        color: Colors.white,
-                      ),
+                      Container(width: 100, height: 12, color: Colors.white),
                       const SizedBox(height: 6),
-                      Container(
-                        width: 60,
-                        height: 10,
-                        color: Colors.white,
-                      ),
+                      Container(width: 60, height: 10, color: Colors.white),
                     ],
-                  ),
+                  )
                 ],
               ),
-
               const SizedBox(height: 16),
-
-              // Post title / caption
-              Container(
-                width: double.infinity,
-                height: 12,
-                color: Colors.white,
-              ),
+              Container(width: double.infinity, height: 12, color: Colors.white),
               const SizedBox(height: 8),
-              Container(
-                width: double.infinity,
-                height: 12,
-                color: Colors.white,
-              ),
+              Container(width: double.infinity, height: 12, color: Colors.white),
               const SizedBox(height: 8),
-              Container(
-                width: 200,
-                height: 12,
-                color: Colors.white,
-              ),
-
+              Container(width: 200, height: 12, color: Colors.white),
               const SizedBox(height: 16),
-
-              // Post image
               Container(
-                width: double.infinity,
                 height: 180,
+                width: double.infinity,
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(12),
                 ),
               ),
-
               const SizedBox(height: 16),
-
-              // Interaction row (buttons)
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: List.generate(3, (_) {
-                  return Container(
-                    width: 60,
-                    height: 12,
-                    color: Colors.white,
-                  );
+                  return Container(width: 60, height: 12, color: Colors.white);
                 }),
-              )
+              ),
             ],
           ),
         ),
@@ -196,8 +155,7 @@ class _FeedPageState extends State<FeedPage> {
     );
   }
 
-
-  Widget buildEmptyState() {
+  Widget _buildEmptyState() {
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32.0),
@@ -225,27 +183,28 @@ class _FeedPageState extends State<FeedPage> {
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<String>>(
-      future: followingUidsFuture,
+      future: _followingUidsFuture,
       builder: (context, uidSnapshot) {
         if (uidSnapshot.connectionState == ConnectionState.waiting) {
-          return buildShimmer();
+          return _buildShimmer();
         }
 
         final uids = uidSnapshot.data ?? [];
+        if (uids.isEmpty) return _buildEmptyState();
 
         return RefreshIndicator(
           onRefresh: _refreshFeed,
           child: StreamBuilder<List<PostModel>>(
-            stream: getPostsFromFollowing(uids),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return buildShimmer();
+            stream: _fetchPosts(uids),
+            builder: (context, postSnapshot) {
+              if (postSnapshot.connectionState == ConnectionState.waiting) {
+                return _buildShimmer();
               }
 
-              final posts = snapshot.data ?? [];
+              final posts = postSnapshot.data ?? [];
 
               if (posts.isEmpty) {
-                return buildEmptyState();
+                return _buildEmptyState();
               }
 
               return ListView.builder(

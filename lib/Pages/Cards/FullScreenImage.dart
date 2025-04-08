@@ -75,18 +75,24 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> {
           ),
 
           // More Options Button (Always visible)
-          Positioned(
-            top: MediaQuery.of(context).padding.top + 16,
-            right: 16,
-            child: IconButton(
-              onPressed: () => PostOptions.show(context),
-              icon: const Icon(
-                Bootstrap.three_dots,
-                color: Colors.white,
-                size: 24,
-              ),
-            ),
-          ),
+          // Positioned(
+          //   top: MediaQuery.of(context).padding.top + 16,
+          //   right: 16,
+          //   child: IconButton(
+          //     onPressed: () => PostOptions.show(
+          //       context,
+          //       postOwnerUid: widget.post.id, // pass the UID of the post's owner
+          //       onDelete: () {
+          //         // Handle delete post logic here (e.g. Firestore delete)
+          //       },
+          //     ),
+          //     icon: const Icon(
+          //       Bootstrap.three_dots,
+          //       color: Colors.white,
+          //       size: 24,
+          //     ),
+          //   ),
+          // ),
 
           // Post Details at Bottom (Always visible)
           Positioned(

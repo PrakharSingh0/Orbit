@@ -1,9 +1,11 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/Cards/FullScreenImage.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../Profile/ProfilePage.dart';
 import 'postModel.dart';
 import '../../Cards/CommentPage.dart';
 import '../../Cards/PostOption.dart';
@@ -164,13 +166,26 @@ class _ThreadCardState extends State<ThreadCard> {
             /// --- Header ---
             Row(
               children: [
-                CircleAvatar(
-                  radius: 25,
-                  backgroundImage: (widget.post.userImage.isNotEmpty)
-                      ? NetworkImage(widget.post.userImage)
-                      : const AssetImage("assets/avatar_placeholder.png")
-                  as ImageProvider,
+                GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => ProfilePage(
+                          userId: widget.post.uid,
+                        ),
+                      ),
+                    );
+                  },
+                  child: CircleAvatar(
+                    radius: 25,
+                    backgroundImage: (widget.post.userImage.isNotEmpty)
+                        ? NetworkImage(widget.post.userImage)
+                        : const AssetImage("assets/avatar_placeholder.png")
+                    as ImageProvider,
+                  ),
                 ),
+
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -203,7 +218,56 @@ class _ThreadCardState extends State<ThreadCard> {
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: () => PostOptions.show(context),
+                  onPressed: () => PostOptions.show(
+                    context,
+                    postOwnerUid: widget.post.uid, // pass the UID of the post's owner
+                      onDelete: () async {
+                        final shouldDelete = await showDialog<bool>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text("Delete Post"),
+                            content: const Text("Are you sure you want to delete this post? This action cannot be undone."),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, false),
+                                child: const Text("Cancel"),
+                              ),
+                              TextButton(
+                                onPressed: () => Navigator.pop(context, true),
+                                child: const Text("Delete", style: TextStyle(color: Colors.red)),
+                              ),
+                            ],
+                          ),
+                        );
+
+                        if (shouldDelete == true) {
+                          try {
+                            final postId =  widget.post.id;
+                            final uid =  widget.post.uid;
+
+                            // Delete from global posts collection
+                            await FirebaseFirestore.instance.collection('posts').doc(postId).delete();
+
+                            // Delete from user's posts subcollection
+                            await FirebaseFirestore.instance
+                                .collection('users')
+                                .doc(uid)
+                                .collection('posts')
+                                .doc(postId)
+                                .delete();
+
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text("Post deleted successfully.")),
+                            );
+                          } catch (e) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text("Failed to delete post: $e")),
+                            );
+                          }
+                        }
+                      }
+
+                  ),
                   icon: Icon(
                     Bootstrap.three_dots,
                     size: 18,
