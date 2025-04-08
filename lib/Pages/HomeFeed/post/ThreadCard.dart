@@ -1,27 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/Cards/FullScreenImage.dart';
-// For full-screen image viewer
 
-import 'CommentPage.dart';
-import 'PostOption.dart'; // For expandable text
+import 'postModel.dart';
+import '../../Cards/CommentPage.dart';
+import '../../Cards/PostOption.dart';
 
 class ThreadCard extends StatefulWidget {
-  const ThreadCard({super.key});
+  final PostModel post;
+
+  const ThreadCard({super.key, required this.post});
 
   @override
   State<ThreadCard> createState() => _ThreadCardState();
 }
 
 class _ThreadCardState extends State<ThreadCard> {
-  String ImageUrl="";
   int upvoteCount = 20;
   int shareCount = 0;
   int commentCount = 0;
   bool isUpvoted = false;
   bool isDownvoted = false;
-  var imagePath="assets/a1.webp";
-  var postId=1;
 
   void _handleUpvote() {
     setState(() {
@@ -60,13 +59,13 @@ class _ThreadCardState extends State<ThreadCard> {
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
         pageBuilder: (_, __, ___) => CommentPage(
-          username: "UserName",
-          userId: "@UserID",
-          userImage: "assets/avatar.jpg",
-          postTime: "2h ago • 1.2k views",
-          postTitle: "Post Heading goes here...",
-          postContent: "Post Body content goes here...",
-          postImage: "assets/back.webp",
+          username: widget.post.userName,
+          userId: "@${widget.post.userTag}",
+          userImage: widget.post.userImage,
+          postTime: widget.post.postTime,
+          postTitle: widget.post.postTitle,
+          postContent: widget.post.postBody,
+          postImage: widget.post.postImage,
           upvoteCount: upvoteCount,
           shareCount: shareCount,
           isUpvoted: isUpvoted,
@@ -86,30 +85,27 @@ class _ThreadCardState extends State<ThreadCard> {
   }
 
   String _formatCount(int count) {
-    if (count == 0) return ""; // Hide count if 0
+    if (count == 0) return "";
     if (count >= 1000) {
       return "${(count / 1000).toStringAsFixed(1)}k";
     }
     return count.toString();
   }
 
-
-  // Open Full-Screen Image Viewer
   void _openFullScreenImage(BuildContext context) {
     Navigator.push(
       context,
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 400),
         reverseTransitionDuration: const Duration(milliseconds: 350),
-        pageBuilder: (context, animation, secondaryAnimation) => FullScreenImagePage(
-          imagePath: imagePath,
-          heroTag: "image_$postId",
-        ),
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            FullScreenImagePage(
+              imagePath: widget.post.postImage,
+              heroTag: "image_${widget.post.id ?? UniqueKey()}",
+            ),
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Scale + Fade Animation
           var fadeTween = Tween<double>(begin: 0.0, end: 1.0);
           var scaleTween = Tween<double>(begin: 0.9, end: 1.0);
-
           return FadeTransition(
             opacity: fadeTween.animate(
               CurvedAnimation(parent: animation, curve: Curves.easeOut),
@@ -126,58 +122,44 @@ class _ThreadCardState extends State<ThreadCard> {
     );
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
-    return Card(
-      elevation: 0,
+    return Container(
       color: theme.colorScheme.surface,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header: Profile + @UserID + Name + Time + Menu
+            /// --- Header ---
             Row(
               children: [
-                const CircleAvatar(
+                CircleAvatar(
                   radius: 20,
-                  backgroundImage: AssetImage("assets/avatar.jpg"),
+                  backgroundImage: (widget.post.userImage.isNotEmpty)
+                      ? NetworkImage(widget.post.userImage)
+                      : const AssetImage("assets/avatar_placeholder.png")
+                  as ImageProvider,
                 ),
                 const SizedBox(width: 10),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    RichText(
-                      text: TextSpan(
-                        children: [
-                          TextSpan(
-                            text: "UserName  ",
-                            style: TextStyle(
-                              fontSize: 14,
-                              fontWeight: FontWeight.w700,
-                              color: theme.colorScheme.onSurface,
-                            ),
-                          ),
-                          TextSpan(
-                            text: "@UserID",
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w400,
-                              color: theme.colorScheme.onSurface.withOpacity(0.6),
-                            ),
-                          ),
-                        ],
+                    Text(
+                      widget.post.userName,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        color: theme.colorScheme.onSurface,
+                        fontSize: 14,
                       ),
                     ),
                     Text(
-                      "2h ago • 1.2k views",
+                      "@${widget.post.userTag}",
                       style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w300,
+                        fontWeight: FontWeight.w400,
+                        fontSize: 11,
                         color: theme.colorScheme.onSurface.withOpacity(0.5),
                       ),
                     ),
@@ -185,7 +167,7 @@ class _ThreadCardState extends State<ThreadCard> {
                 ),
                 const Spacer(),
                 IconButton(
-                  onPressed: ()=>PostOptions.show(context),
+                  onPressed: () => PostOptions.show(context),
                   icon: Icon(
                     Bootstrap.three_dots,
                     size: 18,
@@ -195,107 +177,108 @@ class _ThreadCardState extends State<ThreadCard> {
               ],
             ),
 
-            const SizedBox(height: 8),
+            const SizedBox(height: 10),
 
-            // Post Content
-            const Text(
-              "Post Heading goes here...",
-              style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              "Post Body content goes here. This is a sample post description...",
-              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
-            ),
-            const SizedBox(height: 8),
+            /// --- Text Content ---
+            if (widget.post.postTitle.isNotEmpty)
+              Text(
+                widget.post.postTitle,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  fontSize: 15,
+                ),
+              ),
+            if (widget.post.postBody.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                widget.post.postBody,
+                style: const TextStyle(fontSize: 13),
+              ),
+            ],
 
-            // Image (if any)
-            GestureDetector(
-              onTap: () => _openFullScreenImage(context), // Open full-screen image on tap
-              child: Hero(
-                tag: "threadImage", // Unique tag for Hero animation
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(12),
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      maxHeight: 300,
-                      minWidth: double.infinity, // Maximum height of 300
-                    ),
-                    child: Image.asset(
-                      "assets/a1.webp",
-                      fit: BoxFit.cover, // Ensures the image covers the available space
+            /// --- Image (Optional) ---
+            if (widget.post.postImage.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              GestureDetector(
+                onTap: () => _openFullScreenImage(context),
+                child: Hero(
+                  tag: "image_${widget.post.id ?? UniqueKey()}",
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(12),
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(
+                        maxHeight: 300,
+                        minWidth: double.infinity,
+                      ),
+                      child: Image.network(
+                        widget.post.postImage,
+                        fit: BoxFit.cover,
+                      ),
                     ),
                   ),
                 ),
               ),
-            ),
+            ],
 
-            const SizedBox(height: 8),
-
-            // External Link Preview
-            Container(
-              decoration: BoxDecoration(
-                color: theme.colorScheme.onSurface.withOpacity(0.05),
-                borderRadius: BorderRadius.circular(12),
+            /// --- External Link Preview (Optional) ---
+            if (widget.post.externalLink.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Container(
+                decoration: BoxDecoration(
+                  color: theme.colorScheme.onSurface.withOpacity(0.05),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                padding: const EdgeInsets.all(8),
+                child: Row(
+                  children: [
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: Image.asset(
+                        "assets/avatar.jpg", // Placeholder
+                        width: 50,
+                        height: 50,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    const Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text("External Link Headline",
+                              style: TextStyle(fontWeight: FontWeight.w500)),
+                          Text("Link Description...",
+                              overflow: TextOverflow.ellipsis,
+                              maxLines: 1,
+                              style: TextStyle(fontSize: 12)),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: () {},
+                      icon: Icon(
+                        EvaIcons.external_link,
+                        size: 18,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
               ),
-              padding: const EdgeInsets.all(8),
-              child: Row(
-                children: [
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: Image.asset(
-                      "assets/avatar.jpg",
-                      width: 50,
-                      height: 50,
-                      fit: BoxFit.cover,
-                    ),
-                  ),
-                  const SizedBox(width: 10),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          "External Link Headline (optional)",
-                          style: TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        Text(
-                          "External Link Description goes here...",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w300,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                          maxLines: 1,
-                        ),
-                      ],
-                    ),
-                  ),
-                  IconButton(
-                    onPressed: () {},
-                    icon: Icon(
-                      EvaIcons.external_link,
-                      color: theme.colorScheme.onSurface.withOpacity(0.7),
-                      size: 18,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            ],
 
             const SizedBox(height: 12),
 
-            // Action Bar (Likes, Comments, Share, Save)
+            /// --- Actions Row ---
             Row(
               children: [
-                // Upvote & Downvote Box (Outlined)
+                // Upvote / Downvote
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                   decoration: BoxDecoration(
-                    border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.3)), // Outline
+                    border: Border.all(
+                      color: theme.colorScheme.onSurface.withOpacity(0.3),
+                    ),
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -336,23 +319,23 @@ class _ThreadCardState extends State<ThreadCard> {
 
                 const Spacer(),
 
-                // Comment Button (Outlined)
+                // Comment Button
                 InkWell(
                   onTap: _handleComment,
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.3)), // Outline
+                      border: Border.all(
+                        color: theme.colorScheme.onSurface.withOpacity(0.3),
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          OctIcons.comment_discussion,
-                          size: 16,
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
-                        ),
+                        Icon(OctIcons.comment_discussion,
+                            size: 16,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7)),
                         const SizedBox(width: 6),
                         Text(
                           commentCount == 0 ? "Comment" : _formatCount(commentCount),
@@ -369,23 +352,23 @@ class _ThreadCardState extends State<ThreadCard> {
 
                 const Spacer(),
 
-                // Share Button (Outlined)
+                // Share Button
                 InkWell(
                   onTap: _handleShare,
                   borderRadius: BorderRadius.circular(20),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
                     decoration: BoxDecoration(
-                      border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.3)), // Outline
+                      border: Border.all(
+                        color: theme.colorScheme.onSurface.withOpacity(0.3),
+                      ),
                       borderRadius: BorderRadius.circular(20),
                     ),
                     child: Row(
                       children: [
-                        Icon(
-                          EvaIcons.share,
-                          size: 18,
-                          color: theme.colorScheme.onSurface.withOpacity(0.7),
-                        ),
+                        Icon(EvaIcons.share,
+                            size: 18,
+                            color: theme.colorScheme.onSurface.withOpacity(0.7)),
                         const SizedBox(width: 6),
                         Text(
                           shareCount == 0 ? "Share" : _formatCount(shareCount),
@@ -401,6 +384,8 @@ class _ThreadCardState extends State<ThreadCard> {
                 ),
               ],
             ),
+            SizedBox(height: 10,),
+            Divider(),
           ],
         ),
       ),

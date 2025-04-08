@@ -1,25 +1,42 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
+import 'package:http_parser/http_parser.dart';
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 
-Future<String?> uploadToCloudinary(File imageFile) async {
-  final cloudName = 'YOUR_CLOUD_NAME';
-  final uploadPreset = 'YOUR_UNSIGNED_UPLOAD_PRESET'; // You can create one in Cloudinary settings
+Future<String?> uploadToCloudinaryPost(File file) async {
+  try {
+    final compressedBytes = await FlutterImageCompress.compressWithFile(
+      file.absolute.path,
+      quality: 50,
+    );
 
-  final uri = Uri.parse('https://api.cloudinary.com/v1_1/$cloudName/image/upload');
+    if (compressedBytes == null) return null;
 
-  final request = http.MultipartRequest('POST', uri)
-    ..fields['upload_preset'] = uploadPreset
-    ..files.add(await http.MultipartFile.fromPath('file', imageFile.path));
+    final uri = Uri.parse('https://api.cloudinary.com/v1_1/orbit-01/image/upload');
+    final request = http.MultipartRequest('POST', uri)
+      ..fields['upload_preset'] = 'orbit-upload Preset'
+      ..files.add(
+        http.MultipartFile.fromBytes(
+          'file',
+          compressedBytes,
+          filename: 'upload.webp',
+          contentType: MediaType('image', 'webp'),
+        ),
+      );
 
-  final response = await request.send();
+    final response = await request.send();
 
-  if (response.statusCode == 200) {
-    final responseData = await http.Response.fromStream(response);
-    final data = json.decode(responseData.body);
-    return data['secure_url']; // This is your Cloudinary URL
-  } else {
-    print('Failed to upload image. Status code: ${response.statusCode}');
+    if (response.statusCode == 200) {
+      final responseBody = await response.stream.bytesToString();
+      final json = jsonDecode(responseBody);
+      return json['secure_url'];
+    } else {
+      print('Upload failed: ${response.statusCode}');
+      return null;
+    }
+  } catch (e) {
+    print('Upload error: $e');
     return null;
   }
 }

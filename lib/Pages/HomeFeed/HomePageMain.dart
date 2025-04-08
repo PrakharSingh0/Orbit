@@ -7,7 +7,7 @@ import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/HomeFeed/AddPostPage.dart';
 
 import 'package:orbit/Pages/HomeFeed/ExplorePage.dart';
-import 'package:orbit/Pages/HomeFeed/FeedPage.dart';
+import 'package:orbit/Pages/HomeFeed/post/FeedPage.dart';
 import 'package:orbit/Pages/HomeFeed/InboxPage.dart';
 import 'package:orbit/Pages/HomeFeed/Profile/ProfilePage.dart';
 import 'package:orbit/Pages/HomeFeed/search/SearchUserPage.dart';
@@ -28,6 +28,7 @@ class _HomePageMainState extends State<HomePageMain> {
   bool isLoading = true;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
+
 
   String profilePicturUrl="";
   final List<Widget> pages = [
@@ -126,7 +127,11 @@ class _HomePageMainState extends State<HomePageMain> {
   void _onItemTapped(int index) {
     if (index == 4) { // Profile Button Clicked
       _navigateWithCoolAnimation(context, ProfilePage(userId: user?.uid,)); // ✅ Open with animation
-    } else {
+    }
+    if(index==2){
+      _navigateWithCoolAnimation(context, AddPostPage());
+    }
+    else {
       setState(() {
         _selectedIndex = index;
       });
