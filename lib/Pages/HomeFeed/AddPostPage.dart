@@ -16,12 +16,30 @@ class CloudinaryService {
   static const _uploadPreset = 'orbit-upload Preset';
 
   static Future<String> uploadImage(File imageFile) async {
+    // Compress the image before upload
+    final compressedImageBytes = await FlutterImageCompress.compressWithFile(
+      imageFile.path,
+      quality: 60,
+      format: CompressFormat.jpeg,
+    );
+
+    if (compressedImageBytes == null) {
+      throw Exception('Image compression failed');
+    }
+
+    // Save compressed image to a temporary file
+    final tempDir = Directory.systemTemp;
+    final compressedFile = File('${tempDir.path}/compressed_image.jpg');
+    await compressedFile.writeAsBytes(compressedImageBytes);
+
+    // Upload compressed image
     final url = Uri.parse('https://api.cloudinary.com/v1_1/$_cloudName/image/upload');
     final request = http.MultipartRequest('POST', url)
       ..fields['upload_preset'] = _uploadPreset
-      ..files.add(await http.MultipartFile.fromPath(
+      ..files.add(http.MultipartFile.fromBytes(
         'file',
-        imageFile.path,
+        compressedFile.readAsBytesSync(),
+        filename: 'compressed_image.jpg',
         contentType: MediaType('image', 'jpeg'),
       ));
 
@@ -36,6 +54,7 @@ class CloudinaryService {
     }
   }
 }
+
 
 class AddPostPage extends StatefulWidget {
   const AddPostPage({Key? key}) : super(key: key);
@@ -79,9 +98,9 @@ class _AddPostPageState extends State<AddPostPage> {
     }
   }
 
-  Future<void> _pickImage() async {
+  Future<void> _pickImage({required ImageSource source}) async {
     final picker = ImagePicker();
-    final picked = await picker.pickImage(source: ImageSource.gallery);
+    final picked = await picker.pickImage(source: source);
     if (picked != null) {
       setState(() => _selectedImage = File(picked.path));
     }
@@ -243,7 +262,6 @@ class _AddPostPageState extends State<AddPostPage> {
                     ],
                   ),
                   const SizedBox(height: 20),
-
                   TextField(
                     controller: _captionController,
                     maxLines: 1,
@@ -305,7 +323,6 @@ class _AddPostPageState extends State<AddPostPage> {
                       ],
                     ),
                   if (_selectedImage != null) const SizedBox(height: 16),
-
                   if (_showLinkField)
                     Container(
                       decoration: BoxDecoration(
@@ -343,10 +360,12 @@ class _AddPostPageState extends State<AddPostPage> {
             padding: const EdgeInsets.fromLTRB(15, 15, 15, 15),
             decoration: BoxDecoration(
               color: theme.scaffoldBackgroundColor,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+              borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
               boxShadow: [
                 BoxShadow(
-                  color: theme.colorScheme.onSurface.withAlpha((0.2 * 255).toInt()),
+                  color: theme.colorScheme.onSurface
+                      .withAlpha((0.2 * 255).toInt()),
                   offset: const Offset(0, -0.1),
                   blurRadius: 8,
                 )
@@ -354,13 +373,15 @@ class _AddPostPageState extends State<AddPostPage> {
             ),
             child: Row(
               children: [
-                _iconButton(Icons.photo_library_outlined, _pickImage),
+                _iconButton(Icons.photo_library_outlined,
+                        () => _pickImage(source: ImageSource.gallery)),
                 const SizedBox(width: 12),
-                _iconButton(Icons.camera_alt_outlined, _pickImage),
+                _iconButton(Icons.camera_alt_outlined,
+                        () => _pickImage(source: ImageSource.camera)),
+                // const SizedBox(width: 12),
+                // _iconButton(PixelArtIcons.gif, () => _pickImage(source: ImageSource.gallery)),
                 const SizedBox(width: 12),
-                _iconButton(PixelArtIcons.gif, _pickImage),
-                const SizedBox(width: 12),
-                _iconButton(Icons.link_outlined, () {
+                _iconButton(OctIcons.link, () {
                   setState(() => _showLinkField = !_showLinkField);
                 }),
               ],
@@ -385,8 +406,8 @@ class _AddPostPageState extends State<AddPostPage> {
                   .onSurface
                   .withAlpha((0.25 * 255).toInt()),
             )),
-        child: Icon(icon,
-            size: 24, color: Theme.of(context).colorScheme.onSurface),
+        child:
+        Icon(icon, size: 24, color: Theme.of(context).colorScheme.onSurface),
       ),
     );
   }
