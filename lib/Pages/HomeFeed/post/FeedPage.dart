@@ -75,7 +75,7 @@ class _FeedPageState extends State<FeedPage> {
               id: doc.id,
               userName: data['userName'] ?? 'Unknown',
               userTag: data['userTag'] ?? '',
-              postTime: data['timestamp']?.toDate().toString() ?? '',
+              postTime: data["timestamp"] ?? '',
               postTitle: data['caption'] ?? '',
               postBody: data['body'] ?? '',
               userImage: data['profilePictureUrl'] ?? '',

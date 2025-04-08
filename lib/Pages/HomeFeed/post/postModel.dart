@@ -1,8 +1,10 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+
 class PostModel {
   final String id;
   final String userName;
   final String userTag;
-  final String postTime;
+  final Timestamp postTime;
   final String postTitle;
   final String postBody;
   final String userImage;
@@ -26,7 +28,7 @@ class PostModel {
       id: docId,
       userName: map['userName'] ?? 'Unknown',
       userTag: map['userTag'] ?? '',
-      postTime: map['timestamp']?.toDate().toString() ?? '',
+      postTime: map['timestamp']?? '',
       postTitle: map['caption'] ?? '',
       postBody: map['body'] ?? '',
       userImage: map['profilePictureUrl'] ?? '',

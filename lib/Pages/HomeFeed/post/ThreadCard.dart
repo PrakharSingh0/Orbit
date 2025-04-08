@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:orbit/Pages/Cards/FullScreenImage.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import 'postModel.dart';
 import '../../Cards/CommentPage.dart';
@@ -62,7 +64,7 @@ class _ThreadCardState extends State<ThreadCard> {
           username: widget.post.userName,
           userId: "@${widget.post.userTag}",
           userImage: widget.post.userImage,
-          postTime: widget.post.postTime,
+          postTime: widget.post.postTime.toString(),
           postTitle: widget.post.postTitle,
           postContent: widget.post.postBody,
           postImage: widget.post.postImage,
@@ -78,6 +80,21 @@ class _ThreadCardState extends State<ThreadCard> {
     );
   }
 
+  String _getTimeAgo(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+
+    if (diff.inSeconds < 60) return "Just now";
+    if (diff.inMinutes < 60) return "${diff.inMinutes} minute${diff.inMinutes > 1 ? "s" : ""} ago";
+    if (diff.inHours < 24) return "${diff.inHours} hour${diff.inHours > 1 ? "s" : ""} ago";
+    if (diff.inDays < 7) return "${diff.inDays} day${diff.inDays > 1 ? "s" : ""} ago";
+    if (diff.inDays < 30) return "${(diff.inDays / 7).floor()} week${(diff.inDays / 7).floor() > 1 ? "s" : ""} ago";
+    if (diff.inDays < 365) return "${(diff.inDays / 30).floor()} month${(diff.inDays / 30).floor() > 1 ? "s" : ""} ago";
+    return "${(diff.inDays / 365).floor()} year${(diff.inDays / 365).floor() > 1 ? "s" : ""} ago";
+  }
+
+
+
   void _handleShare() {
     setState(() {
       shareCount += 1;
@@ -90,6 +107,17 @@ class _ThreadCardState extends State<ThreadCard> {
       return "${(count / 1000).toStringAsFixed(1)}k";
     }
     return count.toString();
+  }
+
+  Future<void> _openUrl(Url) async {
+    final Uri url = Uri.parse(Url);
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Could not open the URL")),
+      );
+    }
   }
 
   void _openFullScreenImage(BuildContext context) {
@@ -129,7 +157,7 @@ class _ThreadCardState extends State<ThreadCard> {
     return Container(
       color: theme.colorScheme.surface,
       child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 0),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 5),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -137,7 +165,7 @@ class _ThreadCardState extends State<ThreadCard> {
             Row(
               children: [
                 CircleAvatar(
-                  radius: 20,
+                  radius: 25,
                   backgroundImage: (widget.post.userImage.isNotEmpty)
                       ? NetworkImage(widget.post.userImage)
                       : const AssetImage("assets/avatar_placeholder.png")
@@ -147,20 +175,28 @@ class _ThreadCardState extends State<ThreadCard> {
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      widget.post.userName,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w700,
-                        color: theme.colorScheme.onSurface,
-                        fontSize: 14,
+                    Row(
+                      children:[ Text(
+                        widget.post.userName,
+                        style: GoogleFonts.aBeeZee(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
-                    ),
+                        const SizedBox(width: 8,),
+                        Text(
+                          "@${widget.post.userTag}",
+                          style: GoogleFonts.aBeeZee(
+                            fontWeight: FontWeight.w300,fontSize: 14,
+                            color: Theme.of(context).colorScheme.onSurface.withAlpha((0.4*255).toInt()),
+                          ),
+                        ),
+                    ]),
                     Text(
-                      "@${widget.post.userTag}",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w400,
-                        fontSize: 11,
-                        color: theme.colorScheme.onSurface.withOpacity(0.5),
+                      _getTimeAgo(widget.post.postTime.toDate()),
+                      style: GoogleFonts.aBeeZee(
+                        fontSize: 12,
+                        color: Theme.of(context).colorScheme.onSurface.withAlpha((0.4 * 255).toInt()),
                       ),
                     ),
                   ],
@@ -183,16 +219,15 @@ class _ThreadCardState extends State<ThreadCard> {
             if (widget.post.postTitle.isNotEmpty)
               Text(
                 widget.post.postTitle,
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  fontSize: 15,
+                style: GoogleFonts.abel(
+                  fontSize: 18,fontWeight: FontWeight.w600,
                 ),
               ),
             if (widget.post.postBody.isNotEmpty) ...[
               const SizedBox(height: 6),
               Text(
                 widget.post.postBody,
-                style: const TextStyle(fontSize: 13),
+                style: GoogleFonts.actor(fontSize: 14,fontWeight: FontWeight.w300),
               ),
             ],
 
@@ -231,32 +266,28 @@ class _ThreadCardState extends State<ThreadCard> {
                 padding: const EdgeInsets.all(8),
                 child: Row(
                   children: [
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.asset(
-                        "assets/avatar.jpg", // Placeholder
-                        width: 50,
-                        height: 50,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
+                    Icon(MingCute.link_2_line),
                     const SizedBox(width: 10),
-                    const Expanded(
+                    Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text("External Link Headline",
-                              style: TextStyle(fontWeight: FontWeight.w500)),
-                          Text("Link Description...",
+                           Text("Open external link ",
+                              style: GoogleFonts.sanchez(fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),),
+                          Text(widget.post.externalLink ,
                               overflow: TextOverflow.ellipsis,
                               maxLines: 1,
-                              style: TextStyle(fontSize: 12)),
+                              style: const TextStyle(fontSize: 12)),
                         ],
                       ),
                     ),
                     IconButton(
-                      onPressed: () {},
-                      icon: Icon(
+                      onPressed: () {
+                        _openUrl(widget.post.externalLink );
+                      },
+                      icon: const Icon(
                         EvaIcons.external_link,
                         size: 18,
                         color: Colors.grey,
