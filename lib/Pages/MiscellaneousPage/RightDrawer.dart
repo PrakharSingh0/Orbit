@@ -259,7 +259,7 @@ class _RightDrawerState extends State<RightDrawer> {
                       Column(
                         children: [
                           _buildDrawerItem(Icons.person, "Profile", ProfilePage(userId: user?.uid,)),
-                          _buildDrawerItem(Icons.bookmark, "Saved", const UserSavedPost()),
+                          _buildDrawerItem(Icons.bookmark, "Saved", const SavedPostsPage ()),
                           _buildDrawerItem(Icons.history, "History", const UserHistory()),
                           _buildDrawerItem(Icons.workspace_premium, "Premium", const Premium()),
                         ],

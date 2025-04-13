@@ -10,6 +10,7 @@ import 'package:readmore/readmore.dart';
 import '../HomeFeed/post/LikedUsersDialog.dart';
 import '../HomeFeed/post/SimpleCoolLikeButton.dart';
 import '../HomeFeed/post/postModel.dart';
+import 'CommentPage.dart';
 import 'PostOption.dart';
 
 // Same imports...
@@ -140,6 +141,18 @@ class _FullScreenImagePageState extends State<FullScreenImagePage>
     if (diff.inDays < 30) return '${(diff.inDays / 7).floor()}w ago';
     if (diff.inDays < 365) return '${(diff.inDays / 30).floor()}mo ago';
     return '${(diff.inDays / 365).floor()}y ago';
+  }
+
+  void _handleComment() {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        transitionDuration: const Duration(milliseconds: 300),
+        pageBuilder: (_, __, ___) => CommentPage(postId: widget.post.id),
+        transitionsBuilder: (_, animation, __, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
   }
 
   @override
@@ -389,9 +402,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage>
 
   Widget _buildCommentButton(ThemeData theme) {
     return GestureDetector(
-        onTap: () {
-          // Implement your share logic here
-        },
+        onTap: _handleComment,
         child: Padding(
           padding: const EdgeInsets.symmetric(vertical: 4),
           child:  Column(

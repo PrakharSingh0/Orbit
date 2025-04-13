@@ -2,6 +2,9 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:icons_plus/icons_plus.dart';
+
+import '../HomeFeed/Profile/ProfilePage.dart';
 
 class CommentPage extends StatefulWidget {
   final String postId;
@@ -158,6 +161,7 @@ class _CommentPageState extends State<CommentPage> {
     });
   }
 
+
   Widget buildCommentItem(
       Map<String, dynamic> data,
       String id,
@@ -187,13 +191,23 @@ class _CommentPageState extends State<CommentPage> {
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 18,
-                      backgroundImage: (data['userImage'] != null &&
-                          data['userImage'].toString().isNotEmpty)
-                          ? CachedNetworkImageProvider(data['userImage'])
-                          : const AssetImage("assets/avatar_placeholder.png")
-                      as ImageProvider,
+                    GestureDetector(onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) =>
+                              ProfilePage(userId: data['uid']),
+                        ),
+                      );
+                    },
+                      child: CircleAvatar(
+                        radius: 18,
+                        backgroundImage: (data['userImage'] != null &&
+                            data['userImage'].toString().isNotEmpty)
+                            ? CachedNetworkImageProvider(data['userImage'])
+                            : const AssetImage("assets/avatar_placeholder.png")
+                        as ImageProvider,
+                      ),
                     ),
                     const SizedBox(width: 8),
                     Column(
@@ -247,7 +261,7 @@ class _CommentPageState extends State<CommentPage> {
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         IconButton(
-                          icon: Icon(Icons.arrow_upward,
+                          icon: Icon(FontAwesome.arrow_up_solid,
                               size: 18,
                               color: userVote == 1
                                   ? Colors.green
@@ -256,7 +270,7 @@ class _CommentPageState extends State<CommentPage> {
                         ),
                         Text('$score'),
                         IconButton(
-                          icon: Icon(Icons.arrow_downward,
+                          icon: Icon(FontAwesome.arrow_down_solid,
                               size: 18,
                               color: userVote == -1
                                   ? Colors.red
@@ -282,26 +296,70 @@ class _CommentPageState extends State<CommentPage> {
                             _scrollToTextField();
                           },
                         ),
-                        if (data['uid'] == currentUserId || currentUserId == postOwnerId)
-                          IconButton(
-                            icon: const Icon(Icons.delete_outline, color: Colors.red, size: 18),
-                            onPressed: () async {
+                        PopupMenuButton<int>(
+                          icon: Icon(Icons.more_vert, color: Theme.of(context).colorScheme.onSurface, size: 20),
+                          onSelected: (value) async {
+                            if (value == 0) {
                               final confirm = await showDialog<bool>(
                                 context: context,
                                 builder: (context) => AlertDialog(
-                                  title: const Text('Delete Comment'),
-                                  content: const Text('Delete this comment and all its replies?'),
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(15), // Rounded corners
+                                  ),
+                                  title: Text('Delete Comment', style: TextStyle(fontWeight: FontWeight.bold)),
+                                  content: const Text(
+                                    'Are you sure you want to delete this comment and all its replies? This action cannot be undone.',
+                                    style: TextStyle(fontSize: 14),
+                                  ),
                                   actions: [
-                                    TextButton(onPressed: () => Navigator.pop(context, false), child: const Text('Cancel')),
-                                    TextButton(onPressed: () => Navigator.pop(context, true), child: const Text('Delete')),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, false),
+                                      child: Text(
+                                        'Cancel',
+                                        style: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                                      ),
+                                    ),
+                                    TextButton(
+                                      onPressed: () => Navigator.pop(context, true),
+                                      child: Text(
+                                        'Delete',
+                                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                                      ),
+                                    ),
                                   ],
                                 ),
                               );
                               if (confirm == true) {
                                 await deleteComment(id);
                               }
-                            },
-                          ),
+                            }
+                          },
+                          itemBuilder: (context) => [
+                            PopupMenuItem<int>(
+                              value: 0,
+                              height: 40, // Increase height for better touch targets
+                              child: Row(
+                                children: [
+                                  Icon(
+                                    Icons.delete,
+                                    color: Theme.of(context).colorScheme.onSurface, // onSurface color for consistency
+                                    size: 18,
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Text(
+                                    'Delete',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onSurface, // Use error color for delete
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+
+
                       ],
                     );
                   },
@@ -320,6 +378,7 @@ class _CommentPageState extends State<CommentPage> {
       ),
     );
   }
+
 
   @override
   Widget build(BuildContext context) {

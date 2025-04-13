@@ -28,17 +28,9 @@ class _HomePageMainState extends State<HomePageMain> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final User? user = FirebaseAuth.instance.currentUser;
 
+  String profilePicturUrl = "";
 
-  String profilePicturUrl="";
-
-  final List<Widget> pages = [
-    const FeedPage(),
-    const ExplorePage(),
-    const SizedBox(), // Placeholder for AddPostPage
-    const InboxPage(),
-    const SizedBox(), // Placeholder for ProfilePage
-  ];
-
+  late List<Widget> pages;
 
   final List<String> appBarTitles = [
     "Orbit",
@@ -47,13 +39,21 @@ class _HomePageMainState extends State<HomePageMain> {
     "Inbox",
     "Profile"
   ];
+
   @override
   void initState() {
     super.initState();
-    fetchUser(); // ✅ Call the method to load profile picture
+    fetchUser(); // ✅ Fetch profile picture
+    pages = [
+      const FeedPage(),
+      user != null
+          ? ExplorePage(currentUserId: user!.uid)
+          : const Center(child: Text("User not logged in")),
+      const SizedBox(), // AddPost placeholder
+      const InboxPage(),
+      const SizedBox(), // Profile placeholder (handled on nav tap)
+    ];
   }
-
-
 
   void _navigateWithCoolAnimation(BuildContext context, Widget page) {
     Navigator.of(context).push(
@@ -61,41 +61,26 @@ class _HomePageMainState extends State<HomePageMain> {
         transitionDuration: const Duration(milliseconds: 400),
         pageBuilder: (context, animation, secondaryAnimation) => page,
         transitionsBuilder: (context, animation, secondaryAnimation, child) {
-          // Slide from bottom
           final slideAnimation = Tween<Offset>(
-            begin: const Offset(0.0, 0.2), // Start slightly below
+            begin: const Offset(0.0, 0.2),
             end: Offset.zero,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutCubic, // ✅ Smooth & natural transition
-          ));
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutCubic));
 
-          // Scale (zoom) effect
           final scaleAnimation = Tween<double>(
-            begin: 0.95, // Slightly smaller
-            end: 1.0,    // Full size
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeOutBack, // ✅ Adds a nice "pop" effect
-          ));
+            begin: 0.95,
+            end: 1.0,
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeOutBack));
 
-          // Fade animation
           final fadeAnimation = Tween<double>(
             begin: 0.0,
             end: 1.0,
-          ).animate(CurvedAnimation(
-            parent: animation,
-            curve: Curves.easeInOut, // ✅ Smooth fade-in
-          ));
+          ).animate(CurvedAnimation(parent: animation, curve: Curves.easeInOut));
 
           return FadeTransition(
             opacity: fadeAnimation,
             child: SlideTransition(
               position: slideAnimation,
-              child: ScaleTransition(
-                scale: scaleAnimation,
-                child: child,
-              ),
+              child: ScaleTransition(scale: scaleAnimation, child: child),
             ),
           );
         },
@@ -105,10 +90,8 @@ class _HomePageMainState extends State<HomePageMain> {
 
   Future<void> fetchUser() async {
     if (user == null) return;
-
     try {
       final doc = await _firestore.collection("users").doc(user!.uid).get();
-
       if (doc.exists) {
         final data = doc.data() as Map<String, dynamic>;
         setState(() {
@@ -119,9 +102,6 @@ class _HomePageMainState extends State<HomePageMain> {
       debugPrint("Failed to fetch user: $e");
     }
   }
-
-
-
 
   void _onItemTapped(int index) {
     if (index == 2) {
@@ -139,29 +119,24 @@ class _HomePageMainState extends State<HomePageMain> {
     });
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
 
     return Scaffold(
-      backgroundColor: Theme.of(context).colorScheme.surface,
+      backgroundColor: theme.colorScheme.surface,
       endDrawer: const RightDrawer(),
       drawer: const LeftDrawer(),
       appBar: AppBar(
-        backgroundColor: Theme.of(context).colorScheme.surface,
+        backgroundColor: theme.colorScheme.surface,
         title: Text(
-          appBarTitles[_selectedIndex], // Dynamic Title
+          appBarTitles[_selectedIndex],
           style: GoogleFonts.poppins(
             fontSize: 22,
             fontWeight: FontWeight.w700,
             letterSpacing: 1.5,
-            // color: Colors.white,
           ),
         ),
-        // backgroundColor: theme.colorScheme.primary,
-        // elevation: 4,
         shadowColor: Colors.black26,
         titleSpacing: 0,
         actions: [
@@ -171,8 +146,10 @@ class _HomePageMainState extends State<HomePageMain> {
               _navigateWithCoolAnimation(context, const SearchUserPage());
             },
           ),
-
-          IconButton(onPressed: () {}, icon: const Icon(AntDesign.heart_outline)),
+          IconButton(
+            onPressed: () {},
+            icon: const Icon(AntDesign.heart_outline),
+          ),
           Builder(
             builder: (context) {
               return GestureDetector(
@@ -184,11 +161,11 @@ class _HomePageMainState extends State<HomePageMain> {
                   padding: const EdgeInsets.all(2),
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.blueAccent.shade400, width: 1.5),
+                    border: Border.all(
+                        color: Colors.blueAccent.shade400, width: 1.5),
                   ),
                   child: CircleAvatar(
                     radius: 18,
-                    // backgroundColor: Colors.grey[200],
                     backgroundImage: profilePicturUrl.isNotEmpty
                         ? NetworkImage(profilePicturUrl)
                         : const AssetImage("assets/avatar_placeholder.png") as ImageProvider,
@@ -197,31 +174,24 @@ class _HomePageMainState extends State<HomePageMain> {
               );
             },
           ),
-
-
           const SizedBox(width: 10),
         ],
       ),
 
-      // ✅ Smooth Page Transition
       body: AnimatedSwitcher(
         duration: const Duration(milliseconds: 300),
         transitionBuilder: (Widget child, Animation<double> animation) {
-          return FadeTransition(
-            opacity: animation,
-            child: child,
-          );
+          return FadeTransition(opacity: animation, child: child);
         },
         child: pages[_selectedIndex],
       ),
 
-      // ✅ Modern Bottom Navigation Bar (Labels Appear Only When Selected)
       bottomNavigationBar: NavigationBar(
         height: 65,
         selectedIndex: _selectedIndex,
         onDestinationSelected: _onItemTapped,
-        backgroundColor: theme.colorScheme.surface.withAlpha((0.9 * 255).toInt()),
-        indicatorColor: Colors.transparent, // ✅ Removes default highlight
+        backgroundColor: theme.colorScheme.surface.withOpacity(0.9),
+        indicatorColor: Colors.transparent,
         labelBehavior: NavigationDestinationLabelBehavior.onlyShowSelected,
         destinations: [
           const NavigationDestination(
@@ -244,7 +214,7 @@ class _HomePageMainState extends State<HomePageMain> {
               clipBehavior: Clip.none,
               children: [
                 const Icon(Icons.all_inbox_outlined, size: 22),
-                if (unreadMessages > 0) // ✅ Show badge only when there are unread messages
+                if (unreadMessages > 0)
                   Positioned(
                     right: -5,
                     top: -5,
@@ -263,7 +233,7 @@ class _HomePageMainState extends State<HomePageMain> {
               clipBehavior: Clip.none,
               children: [
                 const Icon(Icons.all_inbox, size: 24),
-                if (unreadMessages > 0) // ✅ Show badge only when there are unread messages
+                if (unreadMessages > 0)
                   Positioned(
                     right: -5,
                     top: -5,

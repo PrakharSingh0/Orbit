@@ -467,7 +467,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 itemCount: userPosts.length,
                 itemBuilder: (context, index) {
                   final post = userPosts[index];
-                  return ThreadCard(post: post);
+                  return ThreadCard(post: post,isFromSavedPage: true,);
                 },
               ),
             ],

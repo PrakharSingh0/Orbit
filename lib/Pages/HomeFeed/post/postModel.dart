@@ -28,15 +28,29 @@ class PostModel {
   factory PostModel.fromMap(Map<String, dynamic> map, String docId) {
     return PostModel(
       id: docId,
-      uid: map['uid'],
+      uid: map['uid'] ?? '',
       userName: map['userName'] ?? 'Unknown',
       userTag: map['userTag'] ?? '',
-      postTime: map['timestamp']?? '',
+      postTime: map['timestamp'] ?? Timestamp.now(),
       postTitle: map['caption'] ?? '',
       postBody: map['body'] ?? '',
       userImage: map['profilePictureUrl'] ?? '',
       postImage: map['imageUrl'] ?? '',
       externalLink: map['link'] ?? '',
     );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'uid': uid,
+      'userName': userName,
+      'userTag': userTag,
+      'timestamp': postTime,
+      'caption': postTitle,
+      'body': postBody,
+      'profilePictureUrl': userImage,
+      'imageUrl': postImage,
+      'link': externalLink,
+    };
   }
 }

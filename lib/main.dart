@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:lottie/lottie.dart';
@@ -11,6 +12,23 @@ import 'ThemeData/theme_provider.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // if (kIsWeb) {
+  //   await Firebase.initializeApp(
+  //     options: const FirebaseOptions(
+  //       apiKey: "AIzaSyXXXXXXX", // 🔁 Replace these with your actual Firebase Web values
+  //       authDomain: "your-app.firebaseapp.com",
+  //       projectId: "your-app",
+  //       storageBucket: "your-app.appspot.com",
+  //       messagingSenderId: "1234567890",
+  //       appId: "1:1234567890:web:abc1234567890",
+  //       measurementId: "G-XXXXXXXX", // optional
+  //     ),
+  //   );
+  // } else {
+  //   await Firebase.initializeApp();
+  // }
+
   await Firebase.initializeApp(); // Initialize Firebase
   final themeProvider = ThemeProvider();
   await themeProvider.loadTheme(); // Load saved theme before UI builds
