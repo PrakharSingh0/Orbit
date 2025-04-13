@@ -150,18 +150,18 @@ class _ThreadCardState extends State<ThreadCard> {
     Navigator.of(context).push(
       PageRouteBuilder(
         transitionDuration: const Duration(milliseconds: 300),
-        pageBuilder: (_, __, ___) => CommentPage(
-          username: widget.post.userName,
-          userId: "@${widget.post.userTag}",
-          userImage: widget.post.userImage,
-          postTime: widget.post.postTime.toString(),
-          postTitle: widget.post.postTitle,
-          postContent: widget.post.postBody,
-          postImage: widget.post.postImage,
-          upvoteCount: likeCount,
-          shareCount: shareCount,
-          isUpvoted: isLiked,
-          isDownvoted: false,
+        pageBuilder: (_, __, ___) => CommentPage(postId: widget.post.id,
+          // username: widget.post.userName,
+          // userId: "@${widget.post.userTag}",
+          // userImage: widget.post.userImage,
+          // postTime: widget.post.postTime.toString(),
+          // postTitle: widget.post.postTitle,
+          // postContent: widget.post.postBody,
+          // postImage: widget.post.postImage,
+          // upvoteCount: likeCount,
+          // shareCount: shareCount,
+          // isUpvoted: isLiked,
+          // isDownvoted: false, postId: '',
         ),
         transitionsBuilder: (_, animation, __, child) {
           return FadeTransition(opacity: animation, child: child);
@@ -424,27 +424,27 @@ class _ThreadCardState extends State<ThreadCard> {
 
                     const Spacer(),
                     // COMMENT
-                    // InkWell(
-                    //   onTap: _handleComment,
-                    //   borderRadius: BorderRadius.circular(20),
-                    //   child: Container(
-                    //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    //     decoration: BoxDecoration(
-                    //       border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.3)),
-                    //       borderRadius: BorderRadius.circular(20),
-                    //     ),
-                    //     child: Row(
-                    //       children: [
-                    //         Icon(OctIcons.comment_discussion, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.7)),
-                    //         const SizedBox(width: 6),
-                    //         Text(
-                    //           commentCount == 0 ? "Comment" : _formatCount(commentCount),
-                    //           style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface.withOpacity(0.9)),
-                    //         ),
-                    //       ],
-                    //     ),
-                    //   ),
-                    // ),
+                    InkWell(
+                      onTap: _handleComment,
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          border: Border.all(color: theme.colorScheme.onSurface.withOpacity(0.3)),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Row(
+                          children: [
+                            Icon(OctIcons.comment_discussion, size: 16, color: theme.colorScheme.onSurface.withOpacity(0.7)),
+                            const SizedBox(width: 6),
+                            Text(
+                              commentCount == 0 ? "Comment" : _formatCount(commentCount),
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: theme.colorScheme.onSurface.withOpacity(0.9)),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const Spacer(),
                     // SHARE
                     // InkWell(

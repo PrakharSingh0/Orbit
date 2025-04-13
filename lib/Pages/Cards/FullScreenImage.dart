@@ -374,11 +374,11 @@ class _FullScreenImagePageState extends State<FullScreenImagePage>
           Padding(
             padding: const EdgeInsets.only(top: 2), // Fine-tune text baseline
             child: Text(
-              likeCount == 0 ? "Like" : "$likeCount",
+              likeCount == 0 ? "0" : "$likeCount",
               style: GoogleFonts.sen(
                   fontSize: 16,
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.surface),
+                  color: Colors.white),
               // style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: theme.colorScheme.surface.withOpacity(0.9)),
             ),
           ),
@@ -398,9 +398,9 @@ class _FullScreenImagePageState extends State<FullScreenImagePage>
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.center,
             children: [
-              Icon(
+              const Icon(
               LineAwesome.comments,
-                color: theme.colorScheme.surface,
+                color: Colors.white,
                 size: 22,
               ),
               const SizedBox(height: 6),
@@ -409,7 +409,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage>
                 style: GoogleFonts.outfit(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: theme.colorScheme.surface.withOpacity(0.9),
+                  color: Colors.white,
                   letterSpacing: 0.5,
                 ),
               ),
@@ -429,9 +429,9 @@ class _FullScreenImagePageState extends State<FullScreenImagePage>
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          Icon(
+          const Icon(
             IonIcons.share_social,
-            color: theme.colorScheme.surface,
+            color: Colors.white,
             size: 22,
           ),
           const SizedBox(height: 6),
@@ -440,7 +440,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage>
             style: GoogleFonts.outfit(
               fontSize: 12,
               fontWeight: FontWeight.w600,
-              color: theme.colorScheme.surface.withOpacity(0.9),
+              color: Colors.white,
               letterSpacing: 0.5,
             ),
           ),
