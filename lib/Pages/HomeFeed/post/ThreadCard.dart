@@ -109,7 +109,6 @@ class _ThreadCardState extends State<ThreadCard> {
     return InkWell(
       onTap: _handleLike,
       onLongPress: _openLikedByPage,
-      // borderRadius: BorderRadius.circular(20),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.center,

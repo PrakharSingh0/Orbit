@@ -7,12 +7,14 @@ class SimpleCoolLikeButton extends StatefulWidget {
   final bool isLiked;
   final VoidCallback onTap;
   final double iconSize;
+  final Color? unlikedColor;
 
   const SimpleCoolLikeButton({
     super.key,
     required this.isLiked,
     required this.onTap,
     required this.iconSize,
+    this.unlikedColor,
   });
 
   @override
@@ -34,6 +36,7 @@ class _SimpleCoolLikeButtonState extends State<SimpleCoolLikeButton>
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return GestureDetector(
       onTap: _handleTap,
       child: Stack(
@@ -60,10 +63,23 @@ class _SimpleCoolLikeButtonState extends State<SimpleCoolLikeButton>
                 curve: Curves.easeIn,
               ),
             ],
-            child: Icon(
-              widget.isLiked ? AntDesign.like_fill : AntDesign.like_outline,
-              color: widget.isLiked ? Colors.pinkAccent : Colors.grey,
-              size: widget.iconSize,
+            child: ShaderMask(
+              shaderCallback: (bounds) => LinearGradient(
+                colors: widget.isLiked
+                    ? [ Colors.blueAccent, (Colors.deepPurple).withOpacity(0.8)]
+                    :
+                [
+                  widget.unlikedColor ?? Theme.of(context).colorScheme.onSurface,
+                  widget.unlikedColor ?? Theme.of(context).colorScheme.onSurface,
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ).createShader(bounds),
+              child: Icon(
+                widget.isLiked ? AntDesign.like_fill : AntDesign.like_outline,
+                color: Colors.white,
+                size: widget.iconSize,
+              ),
             ),
           ),
         ],

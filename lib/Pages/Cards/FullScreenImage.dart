@@ -2,11 +2,13 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:photo_view/photo_view.dart';
 import 'package:readmore/readmore.dart';
 
 import '../HomeFeed/post/LikedUsersDialog.dart';
+import '../HomeFeed/post/SimpleCoolLikeButton.dart';
 import '../HomeFeed/post/postModel.dart';
 import 'PostOption.dart';
 
@@ -28,7 +30,8 @@ class FullScreenImagePage extends StatefulWidget {
   State<FullScreenImagePage> createState() => _FullScreenImagePageState();
 }
 
-class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerProviderStateMixin {
+class _FullScreenImagePageState extends State<FullScreenImagePage>
+    with TickerProviderStateMixin {
   late final PhotoViewController _photoController;
   late final AnimationController _scaleController;
   late final Animation<double> _scaleAnimation;
@@ -37,7 +40,8 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
   double _dragOffset = 0.0;
   bool _uiVisible = true;
 
-  int _upvotes = 0;
+  int likeCount = 0;
+
   bool _isLiked = false;
 
   final currentUserId = FirebaseAuth.instance.currentUser?.uid;
@@ -75,7 +79,7 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
 
     setState(() {
       _isLiked = snapshot.exists;
-      _upvotes = likesSnapshot.size;
+      likeCount = likesSnapshot.size;
     });
   }
 
@@ -90,14 +94,15 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
 
     setState(() {
       _isLiked = !liked;
-      _upvotes += liked ? -1 : 1;
+      likeCount += liked ? -1 : 1;
     });
 
     _scaleController.forward(from: 0);
 
     try {
       if (!liked) {
-        await likeDoc.set({'uid': currentUserId, 'likedAt': FieldValue.serverTimestamp()});
+        await likeDoc.set(
+            {'uid': currentUserId, 'likedAt': FieldValue.serverTimestamp()});
       } else {
         await likeDoc.delete();
       }
@@ -155,7 +160,8 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
         onVerticalDragUpdate: (details) {
           if (!_isZoomed) {
             setState(() {
-              _dragOffset = (_dragOffset + details.delta.dy).clamp(-100.0, 100.0);
+              _dragOffset =
+                  (_dragOffset + details.delta.dy).clamp(-100.0, 100.0);
             });
           }
         },
@@ -207,11 +213,13 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           IconButton(
-            icon: const Icon(Icons.arrow_back_ios_new, color: Colors.white, size: 26),
+            icon: const Icon(Icons.arrow_back_ios_new,
+                color: Colors.white, size: 26),
             onPressed: () => Navigator.pop(context),
           ),
           IconButton(
-            icon: const Icon(Bootstrap.three_dots, color: Colors.white70, size: 20),
+            icon: const Icon(Bootstrap.three_dots,
+                color: Colors.white70, size: 20),
             onPressed: () => PostOptions.show(
               context,
               postOwnerUid: post.uid,
@@ -220,16 +228,30 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
                   context: context,
                   builder: (_) => AlertDialog(
                     title: const Text("Delete Post"),
-                    content: const Text("Are you sure you want to delete this post?"),
+                    content: const Text(
+                        "Are you sure you want to delete this post?"),
                     actions: [
-                      TextButton(onPressed: () => Navigator.pop(context, false), child: const Text("Cancel")),
-                      TextButton(onPressed: () => Navigator.pop(context, true), child: const Text("Delete", style: TextStyle(color: Colors.red))),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, false),
+                          child: const Text("Cancel")),
+                      TextButton(
+                          onPressed: () => Navigator.pop(context, true),
+                          child: const Text("Delete",
+                              style: TextStyle(color: Colors.red))),
                     ],
                   ),
                 );
                 if (confirm == true) {
-                  await FirebaseFirestore.instance.collection('posts').doc(post.id).delete();
-                  await FirebaseFirestore.instance.collection('users').doc(post.uid).collection('posts').doc(post.id).delete();
+                  await FirebaseFirestore.instance
+                      .collection('posts')
+                      .doc(post.id)
+                      .delete();
+                  await FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(post.uid)
+                      .collection('posts')
+                      .doc(post.id)
+                      .delete();
                   if (mounted) Navigator.pop(context);
                 }
               },
@@ -264,22 +286,34 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
                   radius: 20,
                   backgroundImage: post.userImage.isNotEmpty
                       ? CachedNetworkImageProvider(post.userImage)
-                      : const AssetImage("assets/avatar_placeholder.png") as ImageProvider,
+                      : const AssetImage("assets/avatar_placeholder.png")
+                          as ImageProvider,
                 ),
                 const SizedBox(width: 12),
                 Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(post.userName, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.w600, fontSize: 15)),
-                    Text("@${post.userTag} • ${_getTimeAgo(post.postTime.toDate())}",
-                        style: TextStyle(color: Colors.white.withOpacity(0.6), fontSize: 13)),
+                    Text(post.userName,
+                        style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.w600,
+                            fontSize: 15)),
+                    Text(
+                        "@${post.userTag} • ${_getTimeAgo(post.postTime.toDate())}",
+                        style: TextStyle(
+                            color: Colors.white.withOpacity(0.6),
+                            fontSize: 13)),
                   ],
                 ),
               ],
             ),
             const SizedBox(height: 10),
             if (post.postTitle.isNotEmpty)
-              Text(post.postTitle, style: const TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16)),
+              Text(post.postTitle,
+                  style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.bold,
+                      fontSize: 16)),
             if (post.postBody.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.only(top: 4),
@@ -289,7 +323,8 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
                   trimMode: TrimMode.Line,
                   trimCollapsedText: 'Read more',
                   trimExpandedText: 'Show less',
-                  style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 14),
+                  style: TextStyle(
+                      color: Colors.white.withOpacity(0.85), fontSize: 14),
                   moreStyle: const TextStyle(color: Colors.blueAccent),
                   lessStyle: const TextStyle(color: Colors.blueAccent),
                 ),
@@ -302,47 +337,115 @@ class _FullScreenImagePageState extends State<FullScreenImagePage> with TickerPr
 
   Widget _buildRightActions() {
     return Positioned(
-      right: 16,
-      bottom: MediaQuery.of(context).padding.bottom + 120,
+        bottom: MediaQuery.of(context).padding.bottom + 180,
+        right: 12,
+        child: Column(children: [
+          _buildLikeButton(Theme.of(context)),
+          const SizedBox(height: 6),
+          _buildCommentButton(Theme.of(context)),
+          const SizedBox(height: 6),
+          _buildShareButton(Theme.of(context)),
+        ]));
+  }
+
+  Widget _buildLikeButton(ThemeData theme) {
+    return InkWell(
+      onTap: _handleLike,
+      onLongPress: _openLikedByPage,
       child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          ScaleTransition(
-            scale: _scaleAnimation,
-            child: GestureDetector(
-              onTap: _handleLike,
-              onLongPress: _openLikedByPage,
-              child: Column(
-                children: [
-                  Icon(_isLiked ? AntDesign.like_fill : AntDesign.like_outline,
-                      color: _isLiked ? Colors.blueAccent : Colors.white, size: 28),
-                  const SizedBox(height: 4),
-                  Text("$_upvotes", style: const TextStyle(color: Colors.white)),
-                ],
-              ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: SimpleCoolLikeButton(
+              isLiked: _isLiked,
+              onTap: () {
+                setState(() {
+                  _isLiked = !_isLiked;
+                  likeCount += _isLiked ? 1 : -1;
+                });
+              },
+              iconSize: 18,
+              unlikedColor: Colors.white,
             ),
           ),
-          const SizedBox(height: 24),
-          // _ActionIcon(
-          //   icon: Icons.mode_comment_outlined,
-          //   label: "0", // Can dynamically update later
-          //   onTap: () {
-          //     showModalBottomSheet(
-          //       context: context,
-          //       backgroundColor: Colors.black,
-          //       shape: const RoundedRectangleBorder(
-          //         borderRadius: BorderRadius.vertical(top: Radius.circular(16)),
-          //       ),
-          //       builder: (_) => const Padding(
-          //         padding: EdgeInsets.all(16),
-          //         child: Text("Comments coming soon...", style: TextStyle(color: Colors.white)),
-          //       ),
-          //     );
-          //   },
-          // ),
-          // const SizedBox(height: 24),
-          // _ActionIcon(icon: Icons.share_outlined, label: "Share", onTap: () {}),
+          const SizedBox(width: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 2), // Fine-tune text baseline
+            child: Text(
+              likeCount == 0 ? "Like" : "$likeCount",
+              style: GoogleFonts.sen(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.surface),
+              // style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600, color: theme.colorScheme.surface.withOpacity(0.9)),
+            ),
+          ),
         ],
       ),
     );
+  }
+
+  Widget _buildCommentButton(ThemeData theme) {
+    return GestureDetector(
+        onTap: () {
+          // Implement your share logic here
+        },
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          child:  Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Icon(
+              LineAwesome.comments,
+                color: theme.colorScheme.surface,
+                size: 22,
+              ),
+              const SizedBox(height: 6),
+              Text(
+                "0",
+                style: GoogleFonts.outfit(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: theme.colorScheme.surface.withOpacity(0.9),
+                  letterSpacing: 0.5,
+                ),
+              ),
+            ],
+          ),
+        ));
+  }
+
+  Widget _buildShareButton(ThemeData theme) {
+    return GestureDetector(
+      onTap: () {
+        // Implement your share logic here
+      },
+      child: Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child:  Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Icon(
+            IonIcons.share_social,
+            color: theme.colorScheme.surface,
+            size: 22,
+          ),
+          const SizedBox(height: 6),
+          Text(
+            "Share",
+            style: GoogleFonts.outfit(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: theme.colorScheme.surface.withOpacity(0.9),
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    ));
   }
 }
