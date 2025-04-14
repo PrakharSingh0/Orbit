@@ -58,9 +58,10 @@
 ### 📝 Post Creation
 
 - **Add Post Flow**
-- 
-<img src="https://github.com/user-attachments/assets/950e6168-778d-4027-9a0d-7b1694fe0596" width="180">
+
+  
 <img src="https://github.com/user-attachments/assets/5a468397-1778-4696-be7f-544b75578955" width="180">
+<img src="https://github.com/user-attachments/assets/950e6168-778d-4027-9a0d-7b1694fe0596" width="180">
 
 ### 👤 Profile Page
 
