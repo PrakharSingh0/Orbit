@@ -1,130 +1,147 @@
 import 'package:flutter/material.dart';
 import 'package:icons_plus/icons_plus.dart';
 import 'package:provider/provider.dart';
-
+import 'package:intl/intl.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../Auth/Pages/welcomePage.dart';
 import '../../ThemeData/theme_provider.dart';
 
-class LeftDrawer extends StatefulWidget {
+class LeftDrawer extends StatelessWidget {
   const LeftDrawer({super.key});
-
-  @override
-  State<LeftDrawer> createState() => _LeftDrawerState();
-}
-
-class _LeftDrawerState extends State<LeftDrawer> {
-  bool _showAllFollowers = false; // Track expanded state
-
-  final List<String> _followers = List.generate(15, (index) => "Follower ${index + 1}"); // Dummy follower list
 
   @override
   Widget build(BuildContext context) {
     final themeProvider = Provider.of<ThemeProvider>(context);
+    final theme = Theme.of(context);
+
+    // Detect the current system brightness
+    final systemBrightness = MediaQuery.platformBrightnessOf(context);
+
+    // Determine whether dark mode is active
+    bool isDarkMode = themeProvider.themeMode == ThemeMode.dark ||
+        (themeProvider.themeMode == ThemeMode.system && systemBrightness == Brightness.dark);
+
+    String formattedDate = DateFormat('EEEE, MMM d').format(DateTime.now());
+    String formattedTime = DateFormat('hh:mm a').format(DateTime.now());
 
     return SizedBox(
       width: MediaQuery.of(context).size.width * 0.6,
       child: Drawer(
-        child: Column(
-          children: [
-            SizedBox(height: 50,),
-            const Divider(),
-            Expanded(
-              child: SingleChildScrollView(
+        backgroundColor: Theme.of(context).colorScheme.surface,
+        child: Container(
+          color: theme.colorScheme.surface, // ✅ Adaptive background color
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SizedBox(height: 50),
+
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const SizedBox(height: 10),
-                    // Favorite Followers Section
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 16),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Favorite Followers",
-                          style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
-                        ),
+                    Text(
+                      formattedDate,
+                      style: theme.textTheme.titleLarge?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
                       ),
                     ),
-
-                    ListView.builder(
-                      shrinkWrap: true,
-                      physics: const NeverScrollableScrollPhysics(), // Prevents nested scrolling issues
-                      itemCount: _showAllFollowers ? _followers.length : (_followers.length > 4 ? 4 : _followers.length),
-                      itemBuilder: (context, index) {
-                        return ListTile(
-                          leading: const CircleAvatar(radius: 18), // Placeholder avatar
-                          title: Text(_followers[index]),
-                          onTap: () {
-                            // Handle follower tap
-                          },
-                        );
-                      },
-                    ),
-
-                    if (_followers.length > 5)
-                      TextButton(
-                        onPressed: () {
-                          setState(() {
-                            _showAllFollowers = !_showAllFollowers;
-                          });
-                        },
-                        child: Text(_showAllFollowers ? "Show Less" : "Show More"),
+                    Text(
+                      formattedTime,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
                       ),
-
+                    ),
+                    Divider(color: theme.colorScheme.onSurface.withAlpha((0.3 * 255).toInt())),
+                    // ✅ Softer divider
+                    Text(
+                      "App Version 1.0.0",
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: theme.colorScheme.onSurface.withAlpha((0.6 * 255).toInt()), // ✅ Adaptive text
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
 
-            // Dark Mode & Logout at the bottom
-            Column(
-              children: [
-                const Divider(),
+              const Spacer(),
 
-                SwitchListTile(
-                  title: const Text(
-                    "Dark Mode",
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w500),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 16),
-                  secondary: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 400),
-                    transitionBuilder: (Widget child, Animation<double> animation) {
-                      return FadeTransition(
-                        opacity: animation,
-                        child: RotationTransition(
-                          turns: animation,
-                          child: child,
-                        ),
-                      );
-                    },
-                    child: Icon(
-                      themeProvider.themeMode == ThemeMode.dark ? Icons.bedtime : Icons.wb_sunny_rounded,
-                      key: ValueKey<bool>(themeProvider.themeMode == ThemeMode.dark),
-                      color: Colors.grey.shade600,
-                      size: 22,
+              Divider(color: theme.colorScheme.onSurface.withAlpha((0.3 * 255).toInt())),
+
+              // Dark Mode Toggle
+              Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SwitchListTile(
+                    title: Text(
+                      "Dark Mode",
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w500,
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
+                      ),
                     ),
+                    contentPadding: const EdgeInsets.symmetric(horizontal: 16),
+                    secondary: AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 400),
+                      transitionBuilder: (Widget child, Animation<double> animation) {
+                        return FadeTransition(
+                          opacity: animation,
+                          child: RotationTransition(
+                            turns: Tween(begin: 0.5, end: 1.0).animate(animation),
+                            child: child,
+                          ),
+                        );
+                      },
+                      child: Icon(
+                        isDarkMode ? Icons.bedtime : Icons.wb_sunny_rounded,
+                        key: ValueKey<bool>(isDarkMode),
+                        color: theme.colorScheme.secondary, // ✅ Adaptive icon color
+                        size: 24,
+                      ),
+                    ),
+                    value: isDarkMode,
+                    onChanged: (value) {
+                      themeProvider.setTheme(value ? ThemeMode.dark : ThemeMode.light);
+                    },
                   ),
-                  value: themeProvider.themeMode == ThemeMode.dark,
-                  onChanged: (value) {
-                    themeProvider.toggleTheme();
-                  },
-                  activeColor: Colors.grey.shade800,
-                  inactiveThumbColor: Colors.grey.shade400,
-                  inactiveTrackColor: Colors.grey.shade300,
-                  materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                ),
 
-                ListTile(
-                  leading: const Icon(AntDesign.logout_outline),
-                  title: const Text("Log Out"),
-                  onTap: () {
-                    // Handle log out
-                  },
-                ),
-              ],
-            ),
-          ],
+                  ListTile(
+                    leading: Icon(
+                      AntDesign.logout_outline,
+                      color: theme.colorScheme.onSurface, // ✅ Error color adapts to theme
+                    ),
+                    title: Text(
+                      "Log Out",
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: theme.colorScheme.onSurface, // ✅ Adaptive text color
+                      ),
+                    ),
+                    onTap: () => _logout(context),
+                  ),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  void _logout(BuildContext context) async {
+    try {
+      await FirebaseAuth.instance.signOut();
+
+      // Navigate to the Welcome Screen and remove all previous routes
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) =>  const WelcomeScreen()),
+            (route) => false,
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Error logging out: ${e.toString()}")),
+      );
+    }
   }
 }
