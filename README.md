@@ -62,6 +62,11 @@
 <img src="https://github.com/user-attachments/assets/19b03955-5047-4bfb-b437-8ebf602b83a1" width="180">
 <img src="https://github.com/user-attachments/assets/950e6168-778d-4027-9a0d-7b1694fe0596" width="180">
 
+### 👤 Profile Page
+
+<img src="https://github.com/user-attachments/assets/33129c1e-49ab-4b70-84c0-104f21bf67c8" width="180">
+<img src="https://github.com/user-attachments/assets/8cc33044-3c4a-402a-a967-d5cf62f9a79e" width="180">
+
 ### 📂 Drawer
 
 <img src="https://github.com/user-attachments/assets/d7528ade-127f-4276-9e13-6fede3c94cea" width="180">
@@ -73,7 +78,6 @@
 <img src="https://github.com/user-attachments/assets/745c0935-a176-4309-ba6e-674ede95c9f9" width="180">
 <img src="https://github.com/user-attachments/assets/afd8d433-1cc5-41f9-865e-910ccd99a58b" width="180">
 <img src="https://github.com/user-attachments/assets/5ddf6566-0e93-46ae-8b29-235eaeb0339c" width="180">
-
 
 ---
 
