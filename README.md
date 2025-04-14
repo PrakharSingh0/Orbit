@@ -92,6 +92,6 @@
 | Layer        | Technology        |
 |--------------|-------------------|
 | Client       | Flutter, Dart     |
-| Backend      | Firebase Auth     |
+| Backend      | Firebase Service  |
 | Database     | Firebase Firestore |
 | Media Storage | Cloudinary       |
