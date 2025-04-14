@@ -50,13 +50,30 @@
 <img src="https://github.com/user-attachments/assets/4ac6aa74-7862-4bd3-b318-2bbe6815a793" width="180">
 <img src="https://github.com/user-attachments/assets/44f4f6df-58ff-4a1c-a8a6-8775b6533126" width="180">
 
-### Settings Page
+### 🏠 Home Feed
 
-<img src="https://github.com/user-attachments/assets/25fa5aa7-6616-452a-815d-bc918b4baa8a" width="180">
-<img src="https://github.com/user-attachments/assets/25fa5aa7-6616-452a-815d-bc918b4baa8a" width="180">
-<img src="https://github.com/user-attachments/assets/25fa5aa7-6616-452a-815d-bc918b4baa8a" width="180">
-<img src="https://github.com/user-attachments/assets/25fa5aa7-6616-452a-815d-bc918b4baa8a" width="180">
-<img src="https://github.com/user-attachments/assets/25207302-a384-4195-9bca-4380f67ccafc" width="180">
+<img src="https://github.com/user-attachments/assets/032bcfcd-4de9-4052-91d4-b0841500de20" width="180">
+<img src="https://github.com/user-attachments/assets/33be121c-7853-4527-bb90-3c7044e5fe65" width="180">
+
+### 📝 Post Creation
+
+- **Add Post Flow**
+
+<img src="https://github.com/user-attachments/assets/19b03955-5047-4bfb-b437-8ebf602b83a1" width="180">
+<img src="https://github.com/user-attachments/assets/950e6168-778d-4027-9a0d-7b1694fe0596" width="180">
+
+### 📂 Drawer
+
+<img src="https://github.com/user-attachments/assets/d7528ade-127f-4276-9e13-6fede3c94cea" width="180">
+<img src="https://github.com/user-attachments/assets/514f18c6-34d7-4171-840a-1da2a87dad71" width="180">
+
+### ⚙️ Settings Page
+
+<img src="https://github.com/user-attachments/assets/e52bc6c2-0b63-49ed-bce0-8143b729b24a" width="180">
+<img src="https://github.com/user-attachments/assets/745c0935-a176-4309-ba6e-674ede95c9f9" width="180">
+<img src="https://github.com/user-attachments/assets/afd8d433-1cc5-41f9-865e-910ccd99a58b" width="180">
+<img src="https://github.com/user-attachments/assets/5ddf6566-0e93-46ae-8b29-235eaeb0339c" width="180">
+
 
 ---
 
